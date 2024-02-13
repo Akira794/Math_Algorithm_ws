@@ -10,17 +10,13 @@ void *MainEngine(void *arg)
 {
 	Mainctrl_Init();
 	Mainctrl_PreStartProc();
-	Mainctrl_Loop();
+	Mainctrl_EngineLoop();
 	Mainctrl_Destroy();
 }
 
 void *OutPut(void *arg)
 {
-	sleep(1);
-	while(Mainctrl_IsLoopOut())
-	{
-		sleep(0.01);
-	}
+	Mainctrl_OutputLoop();
 }
 
 void main(void)
@@ -31,11 +27,11 @@ void main(void)
 	pthread_t main_engine_thread;
 	pthread_t output_thread;
 
-	pthread_create(&output_thread, NULL, OutPut, NULL);
 	pthread_create(&main_engine_thread, NULL, MainEngine, NULL);	
+	pthread_create(&output_thread, NULL, OutPut, NULL);
 
-	pthread_join(output_thread, NULL);
 	pthread_join(main_engine_thread, NULL);	
+	pthread_join(output_thread, NULL);
 #endif	
 }
 
