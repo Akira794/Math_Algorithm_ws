@@ -175,8 +175,7 @@ RBSTATIC void Plot_WorldCoordinateSys(void)
 
 RBSTATIC void Plot_CoordinateSys(void)
 {
-	static POSECMD_T CommandPose[OBJECT_MAXID];
-
+	POSECMD_T CommandPose[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(CommandPose);
 
 	for(uint8_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
@@ -214,9 +213,13 @@ void GnuPlot_Cycle(void)
 	Plot_CoordinateSys();
 
 	//先頭
-	Create_Wall_x(100);
-	Create_Wall_y(500);
-	Create_Wall_z(500);
+	POSECMD_T CommandPose[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(CommandPose);
+
+	Create_Wall_x(RB_Vec3fGetElem(&CommandPose[1u].C_Pos, 0u));
+	Create_Wall_y(RB_Vec3fGetElem(&CommandPose[1u].C_Pos, 1u));
+	Create_Wall_z(RB_Vec3fGetElem(&CommandPose[1u].C_Pos, 2u));
+
 	Create_Box();
 	Splot_Data();
 	Splot_Test();
