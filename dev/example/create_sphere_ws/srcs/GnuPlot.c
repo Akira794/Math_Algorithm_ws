@@ -55,8 +55,8 @@ RBSTATIC void GenerateSphereDat(void)
 	fprintf(plt_3d, "set xrange [0:pi] \n");
 	fprintf(plt_3d, "set yrange [-pi:pi] \n");
 
-	fprintf(plt_3d, "set samples 24 \n");
-	fprintf(plt_3d, "set isosamples 36 \n");
+	fprintf(plt_3d, "set samples 12 \n");
+	fprintf(plt_3d, "set isosamples 24 \n");
 
 	fprintf(plt_3d, "sphere=\"sphere.dat\" \n");
 	fprintf(plt_3d, "set table sphere \n");
@@ -112,16 +112,6 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
 	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
 
-#if 0
-	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate(  lx, -ly, -lz, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[7u]));//H7
-#endif
 	//C_Rotを反映
 	for(uint8_t i = 0u; i < 8u; i++)
 	{
@@ -253,8 +243,6 @@ RBSTATIC void DrawObject(void)
 		DrawBox(i, &ObjectData[i]);
 		DrawObjectSize(i, &ObjectData[i]);
 	}
-
-		DrawSphere(9u, &ObjectData[9u]);
 }
 
 #if 1
@@ -288,8 +276,8 @@ RBSTATIC void SetConfig(void)
 
 	fprintf(plt_3d,"set xrange[-%d:%d] \n",f_plot_width, f_plot_width);
 	fprintf(plt_3d,"set yrange[-%d:%d] \n",f_plot_width, f_plot_width);
-	//fprintf(plt_3d,"set zrange[0:%d] \n",(f_plot_width * 2));
-	fprintf(plt_3d,"set zrange[-%d:%d] \n",500, (f_plot_width * 2));
+	fprintf(plt_3d,"set zrange[0:%d] \n",(f_plot_width * 2));
+	//fprintf(plt_3d,"set zrange[-%d:%d] \n",500, (f_plot_width * 2));
 
 	fprintf(plt_3d,"set ticslevel 0\n");/// z軸をxy平面に接続するコマンド
 	fprintf(plt_3d,"set view 60,110 \n");
@@ -345,10 +333,9 @@ RBSTATIC void SplotData(void)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
-#if 0
+#if 1
 	RB_Vec3f v = ObjectData[8u].C_Pos;
 	RB_Vec3f r = ObjectData[8u].C_AxisLength;
-	fprintf(plt_3d, "R=%.3f \n",r.e[0]);
 #endif
 	//参考: https://ayapin-film.sakura.ne.jp/Gnuplot/Primer/Parametric/3dparam_sphere_pm3d.html
 	fprintf(plt_3d, "set macro \n");
@@ -360,7 +347,13 @@ RBSTATIC void SplotData(void)
 	fprintf(plt_3d, "z_width = %d\n",(f_plot_width * 2));
 	//fprintf(plt_3d," splot [-width:width][-width:width][0:z_width] X using (X[$1]):(Y[$1]):(Z[$1]):(1) with l ls 1 \n");
 	//fprintf(plt_3d," splot -1 \n\n");
-	fprintf(plt_3d," splot 0, \
+#if 0
+	fprintf(plt_3d," splot -1, \
+			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):($1+%.3f) with pm3d \n", \
+			500.0f, v.e[0u], 500.0f, v.e[1u], v.e[2u]);
+#endif
+#if 1
+	fprintf(plt_3d," splot -1, \
 			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
 			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
 			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
@@ -393,6 +386,7 @@ RBSTATIC void SplotData(void)
 			RB_Vec3fGetElem(&(ObjectData[9u].C_AxisLength), 0u),\
 			RB_Vec3fGetElem(&(ObjectData[9u].C_Pos), 2u)\
 			);
+#endif
 }
 
 RBSTATIC void DrawWorldCoordinateSys(void)
@@ -414,22 +408,20 @@ RBSTATIC void DrawCoordinateSys(void)
 		float axis_length = (ObjectData[id].TFMode) ? 200.0f : 0.0f;
 		CoordinateSys_Config(id, &(ObjectData[id].C_Pos), axis_length, &(ObjectData[id].C_Rot));
 
-		if(ObjectData[id].TFMode)
-		{
-			uint32_t label_num = id + 100u;
 
-			RB_Vec3f LabelPos;
-			RB_Vec3f Offset;
-			RB_Vec3fCreate(50.0f, 50.0f, 100.0f, &Offset);
-			RB_Vec3fAdd(&(ObjectData[id].C_Pos), &Offset, &LabelPos);
-			fprintf(plt_3d, "set label %u \'id:%u \' font \"Times,10\" at %.3f, %.3f, %.3f \n", \
-			label_num, \
-			id, \
-			RB_Vec3fGetElem(&LabelPos,0u),\
-			RB_Vec3fGetElem(&LabelPos,1u),\
-			RB_Vec3fGetElem(&LabelPos,2u)\
-			);
-		}
+		uint32_t label_num = id + 100u;
+
+		RB_Vec3f LabelPos;
+		RB_Vec3f Offset;
+		RB_Vec3fCreate(50.0f, 50.0f, 100.0f, &Offset);
+		RB_Vec3fAdd(&(ObjectData[id].C_Pos), &Offset, &LabelPos);
+		fprintf(plt_3d, "set label %u \'id:%u \' font \"Times,10\" at %.3f, %.3f, %.3f \n", \
+		label_num, \
+		id, \
+		RB_Vec3fGetElem(&LabelPos,0u),\
+		RB_Vec3fGetElem(&LabelPos,1u),\
+		RB_Vec3fGetElem(&LabelPos,2u)\
+		);
 	}
 }
 
