@@ -27,6 +27,7 @@ typedef struct
 	RB_Vec3f C_RPY;
 	RB_Mat3f C_Rot;
 	RB_Vec3f C_AxisLength;
+	uint8_t C_WidthType;//0:Center, 1:X width, 2: Y width, 3: Z width
 }OBJECT_T;
 
 void DbgCmd_Init(void);

@@ -11,7 +11,8 @@ RBSTATIC RBCONST RB_Mat3f f_RB_Mat3fident = { { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.
 
 RBSTATIC void DrawGround(float z);
 RBSTATIC void GenerateSphereDat(void);
-RBSTATIC void DrawSphere(uint32_t id, OBJECT_T *Object);
+RBSTATIC void GenerateCylinderDat(void);
+
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object);
 RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object);
 RBSTATIC void DrawObject(void);
@@ -48,9 +49,9 @@ RBSTATIC void DrawGround(float z)
 
 RBSTATIC void GenerateSphereDat(void)
 {
-	fprintf(plt_3d, "Fx(u,v)=sin(u)*cos(v)\n");
-	fprintf(plt_3d, "Fy(u,v)=sin(u)*sin(v)\n");
-	fprintf(plt_3d, "Fz(u,v)=cos(u)\n");
+	fprintf(plt_3d, "F_sphere_x(u,v)=sin(u)*cos(v)\n");
+	fprintf(plt_3d, "F_sphere_y(u,v)=sin(u)*sin(v)\n");
+	fprintf(plt_3d, "F_sphere_z(u,v)=cos(u)\n");
 
 	fprintf(plt_3d, "set xrange [0:pi] \n");
 	fprintf(plt_3d, "set yrange [-pi:pi] \n");
@@ -65,15 +66,24 @@ RBSTATIC void GenerateSphereDat(void)
 	fprintf(plt_3d, "unset yrange \n");
 }
 
-RBSTATIC void DrawSphere(uint32_t id, OBJECT_T *Object)
+RBSTATIC void GenerateCylinderDat(void)
 {
-#if 1
-	RB_Vec3f *v = &Object->C_Pos;
-	RB_Vec3f *r = &Object->C_AxisLength;
-	fprintf(plt_3d, "R=%.3f \n",r->e[0]);
-#endif
-}
+	fprintf(plt_3d, "F_cylinder_x(u)=cos(u)\n");
+	fprintf(plt_3d, "F_cylinder_y(u)=sin(u)\n");
+	fprintf(plt_3d, "F_cylinder_z(v)=v\n");
 
+	fprintf(plt_3d, "set xrange [-pi:pi] \n");
+	fprintf(plt_3d, "set yrange [0:1] \n");
+
+	fprintf(plt_3d, "set samples 24 \n");
+	fprintf(plt_3d, "set isosamples 2 \n");
+
+	fprintf(plt_3d, "cylinder=\"cylinder.dat\" \n");
+	fprintf(plt_3d, "set table cylinder \n");
+	fprintf(plt_3d, "splot 0 \n");
+	fprintf(plt_3d, "unset xrange \n");
+	fprintf(plt_3d, "unset yrange \n");
+}
 
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 {
@@ -103,6 +113,40 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 		{5, 4, 7, 6, 5}
 	};
 */
+
+//どの軸を中心に幅を持たせているかで判別
+#if 0
+//x軸を中心としたBox(初期姿勢でY方向に幅がある場合)
+	RB_Vec3fCreate( 0.0f, -ly, 0.0f, &(BoxInitArray[0u]));//A0
+	RB_Vec3fCreate( 0.0f,  ly, 0.0f, &(BoxInitArray[1u]));//B1
+	RB_Vec3fCreate(  lx,  ly,  0.0f, &(BoxInitArray[2u]));//C2
+	RB_Vec3fCreate(  lx, -ly,  0.0f, &(BoxInitArray[3u]));//D3
+	RB_Vec3fCreate( 0.0f, -ly, lz, &(BoxInitArray[4u]));//E4
+	RB_Vec3fCreate( 0.0f,  ly, lz, &(BoxInitArray[5u]));//F5
+	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
+	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
+
+//y軸を中心としたBox(初期姿勢でX方向に幅がある場合)
+	RB_Vec3fCreate( -lx, 0.0f, 0.0f, &(BoxInitArray[0u]));//A0
+	RB_Vec3fCreate( -lx, ly, 0.0f, &(BoxInitArray[1u]));//B1
+	RB_Vec3fCreate(  lx, ly, 0.0f, &(BoxInitArray[2u]));//C2
+	RB_Vec3fCreate(  lx, 0.0f,0.0f, &(BoxInitArray[3u]));//D3
+	RB_Vec3fCreate( -lx, 0.0f,lz), &(BoxInitArray[4u]));//E4
+	RB_Vec3fCreate( -lx, ly,  lz), &(BoxInitArray[5u]));//F5
+	RB_Vec3fCreate(  lx, ly,  lz), &(BoxInitArray[6u]));//G6
+	RB_Vec3fCreate(  lx, 0.0f,lz), &(BoxInitArray[7u]));//H7
+
+//z軸を中心としたBox(初期姿勢でXとY方向に幅がある場合)
+	RB_Vec3fCreate( -lx, -ly, 0.0f, &(BoxInitArray[0u]));//A0
+	RB_Vec3fCreate( -lx,  ly, 0.0f, &(BoxInitArray[1u]));//B1
+	RB_Vec3fCreate(  lx,  ly, 0.0f, &(BoxInitArray[2u]));//C2
+	RB_Vec3fCreate(  lx, -ly, 0.0f, &(BoxInitArray[3u]));//D3
+	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[4u]));//E4
+	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
+	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
+	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
+
+//重心からサイズ指定したBox
 	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//A0
 	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[1u]));//B1
 	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[2u]));//C2
@@ -111,6 +155,41 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
 	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
 	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
+#endif
+
+RB_Vec3f width3f;
+
+switch(Object->C_WidthType)
+{
+	case 1:
+		RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);
+		break;
+
+	case 2:
+		RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &width3f);
+		break;
+
+	case 3:
+		RB_Vec3fCreate( 1.0f, 1.0f, 0.0f, &width3f);
+		break;
+
+	default:
+		RB_Vec3fCreate( 1.0f, 1.0f, 1.0f, &width3f);
+		break;
+}
+
+float wh_x = RB_Vec3fGetElem(&width3f, 0u) * (-lx);
+float wh_y = RB_Vec3fGetElem(&width3f, 1u) * (-ly);
+float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
+
+	RB_Vec3fCreate( wh_x, wh_y, wh_z, &(BoxInitArray[0u]));//A0
+	RB_Vec3fCreate( wh_x,   ly, wh_z, &(BoxInitArray[1u]));//B1
+	RB_Vec3fCreate(   lx,   ly, wh_z, &(BoxInitArray[2u]));//C2
+	RB_Vec3fCreate(   lx, wh_y, wh_z, &(BoxInitArray[3u]));//D3
+	RB_Vec3fCreate( wh_x, wh_y,   lz, &(BoxInitArray[4u]));//E4
+	RB_Vec3fCreate( wh_x,   ly,   lz, &(BoxInitArray[5u]));//F5
+	RB_Vec3fCreate(   lx,   ly,   lz, &(BoxInitArray[6u]));//G6
+	RB_Vec3fCreate(   lx, wh_y,   lz, &(BoxInitArray[7u]));//H7
 
 	//C_Rotを反映
 	for(uint8_t i = 0u; i < 8u; i++)
@@ -125,7 +204,7 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \"#0918e6\" \n", \
 		object_num, \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
@@ -248,13 +327,9 @@ RBSTATIC void DrawObject(void)
 #if 1
 RBSTATIC void ColorConfig(void)
 {
-	//fprintf(plt_3d,"set palette defined (\
-		0.0 \"#999999\" , 0.2 \"#ffffff\", 0.2 \"#660000\", 0.4 \"#ff3333\",\
-		0.4 \"#000000\", 0.6 \"#999999\", 0.6 \"#006600\", 0.8 \"#33cc33\",\
-		0.8 \"#333300\", 1.0 \"#ffff99\") \n");
-
 	fprintf(plt_3d,"set xyplane 0        # \'set ticslevel 0\' is obsolute \n");
-	fprintf(plt_3d,"set palette defined (0 \"dark-blue\", 1 \"light-blue\") \n");
+	//fprintf(plt_3d,"set palette defined (0 \"dark-blue\", 1 \"light-blue\") \n");
+	fprintf(plt_3d,"set palette defined (0 \"steelblue\", 1 \"steelblue\") \n");
 }
 #endif
 RBSTATIC void UnsetConfig(void)
@@ -284,13 +359,6 @@ RBSTATIC void SetConfig(void)
 	fprintf(plt_3d,"set nogrid\n");
 	//fprintf(plt_3d,"set grid\n");
 
-#if 0
-	//参照:https://gnuplot.sourceforge.net/demo/walls.html
-	fprintf(plt_3d,"set wall x0 fs transparent solid 0.01 border -1 fc \"bisque\"\n");
-	fprintf(plt_3d,"set wall z0 fs transparent solid 0.5 border -1 fc \"bisque\"\n");
-	fprintf(plt_3d,"set wall y0 fs transparent solid 0.01 border -1 fc \"bisque\" \n");
-	fprintf(plt_3d, "set walls\n");
-#endif
 }
 
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m)
@@ -333,26 +401,88 @@ RBSTATIC void SplotData(void)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
-#if 1
-	RB_Vec3f v = ObjectData[8u].C_Pos;
-	RB_Vec3f r = ObjectData[8u].C_AxisLength;
-#endif
+
 	//参考: https://ayapin-film.sakura.ne.jp/Gnuplot/Primer/Parametric/3dparam_sphere_pm3d.html
 	fprintf(plt_3d, "set macro \n");
-	fprintf(plt_3d, "Fx=\"Fx($1,$2)\" \n");
-	fprintf(plt_3d, "Fy=\"Fy($1,$2)\" \n");
-	fprintf(plt_3d, "Fz=\"Fz($1,$2)\" \n");
+	fprintf(plt_3d, "FSx=\"F_sphere_x($1,$2)\" \n");
+	fprintf(plt_3d, "FSy=\"F_sphere_y($1,$2)\" \n");
+	fprintf(plt_3d, "FSz=\"F_sphere_z($1,$2)\" \n");
 
-	fprintf(plt_3d, "width = %d\n",f_plot_width);
-	fprintf(plt_3d, "z_width = %d\n",(f_plot_width * 2));
-	//fprintf(plt_3d," splot [-width:width][-width:width][0:z_width] X using (X[$1]):(Y[$1]):(Z[$1]):(1) with l ls 1 \n");
-	//fprintf(plt_3d," splot -1 \n\n");
+	fprintf(plt_3d, "FCx=\"F_cylinder_x($1)\" \n");
+	fprintf(plt_3d, "FCy=\"F_cylinder_y($1)\" \n");
+	fprintf(plt_3d, "FCz=\"F_cylinder_z($2)\" \n");
+
+	//RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u)
+
+	fprintf(plt_3d," splot -1, \
+			cylinder using (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f):\
+						 (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f):\
+						 (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f) with pm3d, \
+			sphere using (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
+						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
+						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f) with pm3d \n", \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 0u), \
+
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 1u), \
+
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 2u), \
+//=======================================================================================
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 0u), \
+
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 1u), \
+
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 2u)  \
+	);
+
 #if 0
 	fprintf(plt_3d," splot -1, \
-			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):($1+%.3f) with pm3d \n", \
-			500.0f, v.e[0u], 500.0f, v.e[1u], v.e[2u]);
+			sphere using (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
+						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
+						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f) with pm3d \n", \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 0u), \
+
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 1u), \
+
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 2u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 2u)  \
+	);
 #endif
-#if 1
+#if 0
 	fprintf(plt_3d," splot -1, \
 			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
 			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
@@ -442,6 +572,7 @@ void GnuPlot_PreStartProc(void)
 {
 //1回の設定で済むものたち
 	GenerateSphereDat();
+	GenerateCylinderDat();
 	ColorConfig();
 	UnsetConfig();
 	SetConfig();

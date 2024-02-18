@@ -14,7 +14,8 @@ RBSTATIC void ShowCmdStatus(void);
 RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos);
 RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg);
 RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t step_pos, int32_t step_deg);
-RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize);
+RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, uint32_t ObjectWidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize);
+
 
 
 
@@ -79,11 +80,12 @@ RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t ste
 	}
 }
 
-RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize)
+RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, uint32_t ObjectWidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize)
 {
 	//暫定Box設定
 	f_ObjectData[id].C_Pos = CenterPos;
 	f_ObjectData[id].C_AxisLength = ObjectSize;
+	f_ObjectData[id].C_WidthType = ObjectWidthType;
 }
 
 RBSTATIC void KeyCmdSwitch(char cmd)
@@ -220,41 +222,46 @@ void DbgCmd_PreStartProc(void)
 	{
 		RB_Vec3f ObjectPos;
 		RB_Vec3f ObjectSize;
+		uint8_t ObjectWidthType;
 	}BoxInit_T;
 
 	BoxInit_T ObjectBox[OBJECT_MAXID] = { 0.0f };
 
-	RB_Vec3fCreate(300.0f, 200.0f, 100.0f, &(ObjectBox[1u].ObjectPos));
+	RB_Vec3fCreate(300.0f, -200.0f, 100.0f, &(ObjectBox[1u].ObjectPos));
 	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &(ObjectBox[1u].ObjectSize));
 
-	RB_Vec3fCreate(-300.0f, -200.0f, 100.0f, &(ObjectBox[2u].ObjectPos));
-	RB_Vec3fCreate(50.0f, 100.0f, 300.0f, &(ObjectBox[2u].ObjectSize));
+	RB_Vec3fCreate(-300.0f, -200.0f, 0.0f, &(ObjectBox[2u].ObjectPos));
+	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &(ObjectBox[2u].ObjectSize));
+	ObjectBox[2u].ObjectWidthType = 1u;
 
-	RB_Vec3fCreate(-100.0f, -500.0f, 100.0f, &(ObjectBox[3u].ObjectPos));
-	RB_Vec3fCreate(50.0f, 200.0f, 500.0f, &(ObjectBox[3u].ObjectSize));
+	RB_Vec3fCreate(-500.0f, -500.0f, 0.0f, &(ObjectBox[3u].ObjectPos));
+	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &(ObjectBox[3u].ObjectSize));
+	ObjectBox[3u].ObjectWidthType = 2u;
 
-	RB_Vec3fCreate(-900.0f, 0.0f, 0.0f, &(ObjectBox[4u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 1000.0f, 1000.0f, &(ObjectBox[4u].ObjectSize));
+	RB_Vec3fCreate(800.0f, -600.0f, 0.0f, &(ObjectBox[4u].ObjectPos));
+	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &(ObjectBox[4u].ObjectSize));
+	ObjectBox[4u].ObjectWidthType = 3u;
 
-	RB_Vec3fCreate(0.0f, -900.0f, 0.0f, &(ObjectBox[5u].ObjectPos));
-	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
+//	RB_Vec3fCreate(0.0f, -900.0f, 1000.0f, &(ObjectBox[5u].ObjectPos));
+//	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
+
+	//暫定・円柱
+	RB_Vec3fCreate(-300.0f, 500.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
+	RB_Vec3fCreate(100.0f, 0.0f, 0.0f, &(ObjectBox[6u].ObjectSize));
 
 	//暫定 球体
-	RB_Vec3fCreate(300.0f, 500.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
-	RB_Vec3fCreate(200.0f, 0.0f, 0.0f, &(ObjectBox[6u].ObjectSize));
-
-	RB_Vec3fCreate(-300.0f, 500.0f, 500.0f, &(ObjectBox[7u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 0.0f, 0.0f, &(ObjectBox[7u].ObjectSize));
+	//RB_Vec3fCreate(0.0f, 300.0f, 0.0f, &(ObjectBox[7u].ObjectPos));
+	//RB_Vec3fCreate(200.0f, 0.0f, 0.0f, &(ObjectBox[7u].ObjectSize));
 
 	RB_Vec3fCreate(300.0f, -500.0f, 500.0f, &(ObjectBox[8u].ObjectPos));
-	RB_Vec3fCreate(500.0f, 0.0f, 0.0f, &(ObjectBox[8u].ObjectSize));
+	RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &(ObjectBox[8u].ObjectSize));
 
-	RB_Vec3fCreate(-300.0f, -500.0f, 500.0f, &(ObjectBox[9u].ObjectPos));
-	RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &(ObjectBox[9u].ObjectSize));
+	//RB_Vec3fCreate(-300.0f, -500.0f, 500.0f, &(ObjectBox[9u].ObjectPos));
+	//RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &(ObjectBox[9u].ObjectSize));
 
 	for(uint32_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
 	{
-		GenerateObject(id, id, ObjectBox[id].ObjectPos, ObjectBox[id].ObjectSize);
+		GenerateObject(id, id, ObjectBox[id].ObjectWidthType, ObjectBox[id].ObjectPos, ObjectBox[id].ObjectSize);
 	}
 }
 
