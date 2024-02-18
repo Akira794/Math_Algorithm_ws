@@ -90,74 +90,11 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 	uint32_t object_num = (6 * (id + 1u)) - 5;
 	RB_Vec3f BoxInitArray[8u] = { 0.0f };
 	RB_Vec3f BoxVertex[8u] = { 0.0f };
+	RB_Vec3f width3f;
 
 	float lx = RB_Vec3fGetElem(&Object->C_AxisLength, 0u);
 	float ly = RB_Vec3fGetElem(&Object->C_AxisLength, 1u);
 	float lz = RB_Vec3fGetElem(&Object->C_AxisLength, 2u);
-
-/*-
-			E
-	H				F
-	|		G		|
-	|				|
-	|		A		~
-	D				B
-			C
-
-	uint32_t BoxShape[6][5] = {
-		{0, 1, 2, 3, 0},
-		{3, 2, 6, 7, 3},
-		{1, 5, 6, 2, 1},
-		{4, 0, 3, 7, 4},
-		{4, 5, 1, 0, 4},
-		{5, 4, 7, 6, 5}
-	};
-*/
-
-//どの軸を中心に幅を持たせているかで判別
-#if 0
-//x軸を中心としたBox(初期姿勢でY方向に幅がある場合)
-	RB_Vec3fCreate( 0.0f, -ly, 0.0f, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( 0.0f,  ly, 0.0f, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx,  ly,  0.0f, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(  lx, -ly,  0.0f, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( 0.0f, -ly, lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( 0.0f,  ly, lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
-
-//y軸を中心としたBox(初期姿勢でX方向に幅がある場合)
-	RB_Vec3fCreate( -lx, 0.0f, 0.0f, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( -lx, ly, 0.0f, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx, ly, 0.0f, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(  lx, 0.0f,0.0f, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( -lx, 0.0f,lz), &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( -lx, ly,  lz), &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx, ly,  lz), &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(  lx, 0.0f,lz), &(BoxInitArray[7u]));//H7
-
-//z軸を中心としたBox(初期姿勢でXとY方向に幅がある場合)
-	RB_Vec3fCreate( -lx, -ly, 0.0f, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( -lx,  ly, 0.0f, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx,  ly, 0.0f, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(  lx, -ly, 0.0f, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
-
-//重心からサイズ指定したBox
-	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(  lx, -ly, -lz, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
-#endif
-
-RB_Vec3f width3f;
 
 switch(Object->C_WidthType)
 {
