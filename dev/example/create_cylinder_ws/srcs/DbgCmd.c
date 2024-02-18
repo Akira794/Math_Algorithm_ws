@@ -246,9 +246,9 @@ void DbgCmd_PreStartProc(void)
 //	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
 
 	//暫定・円柱
-	RB_Vec3fCreate(-300.0f, 500.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 0.0f, 0.0f, &(ObjectBox[6u].ObjectSize));
-
+	RB_Vec3fCreate(0.0f, 0.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
+	RB_Vec3fCreate(100.0f, 0.0f, 300.0f, &(ObjectBox[6u].ObjectSize));
+	ObjectBox[6u].ObjectWidthType = 3u;
 	//暫定 球体
 	//RB_Vec3fCreate(0.0f, 300.0f, 0.0f, &(ObjectBox[7u].ObjectPos));
 	//RB_Vec3fCreate(200.0f, 0.0f, 0.0f, &(ObjectBox[7u].ObjectSize));
