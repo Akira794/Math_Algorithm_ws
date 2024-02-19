@@ -96,22 +96,30 @@ RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 	float ly = RB_Vec3fGetElem(&Object->C_AxisLength, 1u);
 	float lz = RB_Vec3fGetElem(&Object->C_AxisLength, 2u);
 
-switch(Object->C_WidthType)
+switch(Object->WidthType)
 {
 	case 1:
-		RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);
+		RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);//X軸でy方向に幅
 		break;
 
 	case 2:
-		RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &width3f);
+		RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &width3f);//Y軸でx方向に幅
 		break;
 
 	case 3:
-		RB_Vec3fCreate( 1.0f, 1.0f, 0.0f, &width3f);
+		RB_Vec3fCreate( 1.0f, 1.0f, 0.0f, &width3f);//Z軸でxy方向に幅(半径)
+		break;
+
+	case 4:
+		RB_Vec3fCreate( 1.0f, 0.0f, 1.0f, &width3f);//Y軸でxz方向に幅(半径)
+		break;
+
+	case 5:
+		RB_Vec3fCreate( 0.0f, 1.0f, 1.0f, &width3f);//X軸でyz方向に幅(半径)
 		break;
 
 	default:
-		RB_Vec3fCreate( 1.0f, 1.0f, 1.0f, &width3f);
+		RB_Vec3fCreate( 1.0f, 1.0f, 1.0f, &width3f);//重心からxyz方向に幅(半径、サイズ)
 		break;
 }
 
@@ -256,7 +264,10 @@ RBSTATIC void DrawObject(void)
 
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
-		DrawBox(i, &ObjectData[i]);
+		if((ObjectData[i].ShapeType == 0))
+		{
+			DrawBox(i, &ObjectData[i]);
+		}
 		DrawObjectSize(i, &ObjectData[i]);
 	}
 }
@@ -334,10 +345,39 @@ RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float lengt
 
 }
 
-RBSTATIC void SplotData(void)
+RBSTATIC void GenerateObjectSplot(uint8_t id)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
+
+	//注意! gnuplot の配列は0からではなく1からスタート
+	fprintf(plt_3d, "array M%u_[9] = [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f]\n", \
+		id, \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 2u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 2u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 2u));
+
+	fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+		id, \
+		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 1u), \
+		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 2u));
+
+	fprintf(plt_3d, "array P%u_[3] = [%.3f, %.3f, %.3f]\n", \
+		id, \
+		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 1u), \
+		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 2u));
+}
+
+RBSTATIC void SplotData(void)
+{
 
 	//参考: https://ayapin-film.sakura.ne.jp/Gnuplot/Primer/Parametric/3dparam_sphere_pm3d.html
 	fprintf(plt_3d, "set macro \n");
@@ -349,111 +389,43 @@ RBSTATIC void SplotData(void)
 	fprintf(plt_3d, "FCy=\"F_cylinder_y($1)\" \n");
 	fprintf(plt_3d, "FCz=\"F_cylinder_z($2)\" \n");
 
-	//RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u)
+	GenerateObjectSplot(6u);
+	GenerateObjectSplot(7u);
+	GenerateObjectSplot(8u);
+	GenerateObjectSplot(9u);
 
 	fprintf(plt_3d," splot -1, \
-			cylinder using (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f):\
-						 (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f):\
-						 (((%.3f * @FCx) + (%.3f * @FCy) + (%.3f * @FCz))*%.3f+%.3f) with pm3d, \
-			sphere using (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
-						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
-						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f) with pm3d \n", \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 0u), \
-
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 1u), \
-
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 2u), \
-//=======================================================================================
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 0u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 0u), \
-
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 1u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 1u), \
-
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[8u].C_Rot), 2u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 2u)  \
-	);
-
-#if 0
-	fprintf(plt_3d," splot -1, \
-			sphere using (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
-						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f):\
-						 (((%.3f * @FSx) + (%.3f * @FSy) + (%.3f * @FSz))*%.3f+%.3f) with pm3d \n", \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 0u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 0u), \
-
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 1u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 1u), \
-
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[6u].C_Rot), 2u, 2u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 2u)  \
-	);
-#endif
-#if 0
-	fprintf(plt_3d," splot -1, \
-			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
-			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
-			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d , \
-			sphere using (%.3f*@Fx+%.3f):(%.3f*@Fy+%.3f):(%.3f*@Fz+%.3f) with pm3d \n\n", \
-			RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 1u),\
-			RB_Vec3fGetElem(&(ObjectData[6u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[6u].C_Pos), 2u),\
+			cylinder using \
+							( ( (M6_[1] * (@FCx * L6_[1])) + (M6_[2] * (@FCy * L6_[1])) + (M6_[3] * (@FCz * L6_[3])) ) + P6_[1]):\
+							( ( (M6_[4] * (@FCx * L6_[1])) + (M6_[5] * (@FCy * L6_[1])) + (M6_[6] * (@FCz * L6_[3])) ) + P6_[2]):\
+							( ( (M6_[7] * (@FCx * L6_[1])) + (M6_[8] * (@FCy * L6_[1])) + (M6_[9] * (@FCz * L6_[3])) ) + P6_[3]) with pm3d, \
 			\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_Pos), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_Pos), 1u),\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[7u].C_Pos), 2u),\
+			cylinder using \
+							( ( (M6_[1] * (@FCx * L6_[1])) + (M6_[2] * (@FCy * L6_[1])) + (M6_[3] * (@FCz * L6_[3])) ) + P6_[1]):\
+							( ( (M6_[4] * (@FCx * L6_[1])) + (M6_[5] * (@FCy * L6_[1])) + (M6_[6] * (@FCz * L6_[3])) ) + P6_[2]):\
+							( ( (M6_[7] * (@FCx * L6_[1])) + (M6_[8] * (@FCy * L6_[1])) + (M6_[9] * (@FCz * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\", \
 			\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 1u),\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[8u].C_Pos), 2u),\
+			sphere using \
+							( ( (M7_[1] * (@FSx * L7_[1])) + (M7_[2] * (@FSy * L7_[2])) + (M7_[3] * (@FSz * L7_[3])) ) + P7_[1]):\
+							( ( (M7_[4] * (@FSx * L7_[1])) + (M7_[5] * (@FSy * L7_[2])) + (M7_[6] * (@FSz * L7_[3])) ) + P7_[2]):\
+							( ( (M7_[7] * (@FSx * L7_[1])) + (M7_[8] * (@FSy * L7_[2])) + (M7_[9] * (@FSz * L7_[3])) ) + P7_[3]) with pm3d, \
 			\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_Pos), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_Pos), 1u),\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_AxisLength), 0u),\
-			RB_Vec3fGetElem(&(ObjectData[9u].C_Pos), 2u)\
-			);
-#endif
+			sphere using \
+							( ( (M8_[1] * @FSx) + (M8_[2] * @FSy) + (M8_[3] * @FSz) ) * L8_[1] + P8_[1]):\
+							( ( (M8_[4] * @FSx) + (M8_[5] * @FSy) + (M8_[6] * @FSz) ) * L8_[1] + P8_[2]):\
+							( ( (M8_[7] * @FSx) + (M8_[8] * @FSy) + (M8_[9] * @FSz) ) * L8_[1] + P8_[3]) with pm3d, \
+			\
+			cylinder using \
+							( ( (M9_[1] * (@FCx * L9_[1])) + (M9_[2] * (@FCy * L9_[1])) + (M9_[3] * (@FCz * L9_[3])) ) + P9_[1]):\
+							( ( (M9_[4] * (@FCx * L9_[1])) + (M9_[5] * (@FCy * L9_[1])) + (M9_[6] * (@FCz * L9_[3])) ) + P9_[2]):\
+							( ( (M9_[7] * (@FCx * L9_[1])) + (M9_[8] * (@FCy * L9_[1])) + (M9_[9] * (@FCz * L9_[3])) ) + P9_[3]) with pm3d, \
+			\
+			cylinder using \
+							( ( (M9_[1] * (@FCx * L9_[1])) + (M9_[2] * (@FCy * L9_[1])) + (M9_[3] * (@FCz * L9_[3])) ) + P9_[1]):\
+							( ( (M9_[4] * (@FCx * L9_[1])) + (M9_[5] * (@FCy * L9_[1])) + (M9_[6] * (@FCz * L9_[3])) ) + P9_[2]):\
+							( ( (M9_[7] * (@FCx * L9_[1])) + (M9_[8] * (@FCy * L9_[1])) + (M9_[9] * (@FCz * L9_[3])) ) + P9_[3]) with polygons fc \"steelblue\" \
+			\
+			\n");
 }
 
 RBSTATIC void DrawWorldCoordinateSys(void)

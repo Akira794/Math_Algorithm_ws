@@ -21,13 +21,13 @@ typedef struct
 typedef struct
 {
 	uint32_t id;
-	uint8_t ObjectType;
+	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Cylinder, 3:Capsule
 	bool TFMode;
 	RB_Vec3f C_Pos;
 	RB_Vec3f C_RPY;
 	RB_Mat3f C_Rot;
 	RB_Vec3f C_AxisLength;
-	uint8_t C_WidthType;//0:Center, 1:X width, 2: Y width, 3: Z width
+	uint8_t WidthType;//0:Center, 1:X width, 2: Y width, 3 Z width
 }OBJECT_T;
 
 void DbgCmd_Init(void);

@@ -14,7 +14,7 @@ RBSTATIC void ShowCmdStatus(void);
 RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos);
 RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg);
 RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t step_pos, int32_t step_deg);
-RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, uint32_t ObjectWidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize);
+RBSTATIC void GenerateObject(uint32_t id, uint32_t ShapeType, uint32_t WidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize);
 
 
 
@@ -80,12 +80,13 @@ RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t ste
 	}
 }
 
-RBSTATIC void GenerateObject(uint32_t id, uint32_t ObjectType, uint32_t ObjectWidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize)
+RBSTATIC void GenerateObject(uint32_t id, uint32_t ShapeType, uint32_t WidthType, RB_Vec3f CenterPos, RB_Vec3f ObjectSize)
 {
 	//暫定Box設定
+	f_ObjectData[id].ShapeType = ShapeType;
 	f_ObjectData[id].C_Pos = CenterPos;
 	f_ObjectData[id].C_AxisLength = ObjectSize;
-	f_ObjectData[id].C_WidthType = ObjectWidthType;
+	f_ObjectData[id].WidthType = WidthType;
 }
 
 RBSTATIC void KeyCmdSwitch(char cmd)
@@ -220,48 +221,55 @@ void DbgCmd_PreStartProc(void)
 	//暫定 Box設定
 	typedef struct
 	{
+		uint8_t ShapeType;
 		RB_Vec3f ObjectPos;
 		RB_Vec3f ObjectSize;
-		uint8_t ObjectWidthType;
+		uint8_t WidthType;
 	}BoxInit_T;
 
 	BoxInit_T ObjectBox[OBJECT_MAXID] = { 0.0f };
-
+#if 1
 	RB_Vec3fCreate(300.0f, -200.0f, 100.0f, &(ObjectBox[1u].ObjectPos));
 	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &(ObjectBox[1u].ObjectSize));
 
 	RB_Vec3fCreate(-300.0f, -200.0f, 0.0f, &(ObjectBox[2u].ObjectPos));
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &(ObjectBox[2u].ObjectSize));
-	ObjectBox[2u].ObjectWidthType = 1u;
+	ObjectBox[2u].WidthType = 1u;
 
 	RB_Vec3fCreate(-500.0f, -500.0f, 0.0f, &(ObjectBox[3u].ObjectPos));
 	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &(ObjectBox[3u].ObjectSize));
-	ObjectBox[3u].ObjectWidthType = 2u;
+	ObjectBox[3u].WidthType = 2u;
 
 	RB_Vec3fCreate(800.0f, -600.0f, 0.0f, &(ObjectBox[4u].ObjectPos));
 	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &(ObjectBox[4u].ObjectSize));
-	ObjectBox[4u].ObjectWidthType = 3u;
+	ObjectBox[4u].WidthType = 3u;
 
-//	RB_Vec3fCreate(0.0f, -900.0f, 1000.0f, &(ObjectBox[5u].ObjectPos));
-//	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
-
+	RB_Vec3fCreate(0.0f, -900.0f, 1000.0f, &(ObjectBox[5u].ObjectPos));
+	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
+	ObjectBox[5u].WidthType = 5u;
+#endif
 	//暫定・円柱
-	RB_Vec3fCreate(0.0f, 0.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 0.0f, 300.0f, &(ObjectBox[6u].ObjectSize));
-	ObjectBox[6u].ObjectWidthType = 3u;
+	RB_Vec3fCreate(100.0f, -200.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
+	RB_Vec3fCreate(200.0f, 200.0f, 500.0f, &(ObjectBox[6u].ObjectSize));
+	ObjectBox[6u].ShapeType = 2u;
+	ObjectBox[6u].WidthType = 3u;
 	//暫定 球体
-	//RB_Vec3fCreate(0.0f, 300.0f, 0.0f, &(ObjectBox[7u].ObjectPos));
-	//RB_Vec3fCreate(200.0f, 0.0f, 0.0f, &(ObjectBox[7u].ObjectSize));
+	RB_Vec3fCreate(300.0f, -500.0f, 400.0f, &(ObjectBox[7u].ObjectPos));
+	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &(ObjectBox[7u].ObjectSize));
+	ObjectBox[7u].ShapeType = 1u;
 
-	RB_Vec3fCreate(300.0f, -500.0f, 500.0f, &(ObjectBox[8u].ObjectPos));
-	RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &(ObjectBox[8u].ObjectSize));
+	RB_Vec3fCreate(300.0f, 500.0f, 500.0f, &(ObjectBox[8u].ObjectPos));
+	RB_Vec3fCreate(100.0f, 0.0f, 0.0f, &(ObjectBox[8u].ObjectSize));
+	ObjectBox[8u].ShapeType = 1u;
 
-	//RB_Vec3fCreate(-300.0f, -500.0f, 500.0f, &(ObjectBox[9u].ObjectPos));
-	//RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &(ObjectBox[9u].ObjectSize));
+	RB_Vec3fCreate(-300.0f, 400.0f, 200.0f, &(ObjectBox[9u].ObjectPos));
+	RB_Vec3fCreate(50.0f, 50.0f, 800.0f, &(ObjectBox[9u].ObjectSize));
+	ObjectBox[9u].ShapeType = 2u;
+	ObjectBox[9u].WidthType = 3u;
 
 	for(uint32_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
 	{
-		GenerateObject(id, id, ObjectBox[id].ObjectWidthType, ObjectBox[id].ObjectPos, ObjectBox[id].ObjectSize);
+		GenerateObject(id, ObjectBox[id].ShapeType, ObjectBox[id].WidthType, ObjectBox[id].ObjectPos, ObjectBox[id].ObjectSize);
 	}
 }
 
