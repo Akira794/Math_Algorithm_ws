@@ -11,6 +11,10 @@ RBSTATIC RBCONST RB_Mat3f f_RB_Mat3fident = { { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.
 
 RBSTATIC void DrawGround(float z);
 RBSTATIC void GenerateSphereDat(void);
+
+RBSTATIC void GenerateCylinder_AxisXDat(void);
+RBSTATIC void GenerateCylinder_AxisYDat(void);
+RBSTATIC void GenerateCylinder_AxisZDat(void);
 RBSTATIC void GenerateCylinderDat(void);
 
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object);
@@ -66,11 +70,11 @@ RBSTATIC void GenerateSphereDat(void)
 	fprintf(plt_3d, "unset yrange \n");
 }
 
-RBSTATIC void GenerateCylinderDat(void)
+RBSTATIC void GenerateCylinder_AxisXDat(void)
 {
-	fprintf(plt_3d, "F_cylinder_x(u)=cos(u)\n");
-	fprintf(plt_3d, "F_cylinder_y(u)=sin(u)\n");
-	fprintf(plt_3d, "F_cylinder_z(v)=v\n");
+	fprintf(plt_3d, "F_cylinderX_x(v)=v\n");
+	fprintf(plt_3d, "F_cylinderX_y(u)=cos(u)\n");
+	fprintf(plt_3d, "F_cylinderX_z(u)=sin(u)\n");
 
 	fprintf(plt_3d, "set xrange [-pi:pi] \n");
 	fprintf(plt_3d, "set yrange [0:1] \n");
@@ -78,11 +82,57 @@ RBSTATIC void GenerateCylinderDat(void)
 	fprintf(plt_3d, "set samples 24 \n");
 	fprintf(plt_3d, "set isosamples 2 \n");
 
-	fprintf(plt_3d, "cylinder=\"cylinder.dat\" \n");
-	fprintf(plt_3d, "set table cylinder \n");
+	fprintf(plt_3d, "cylinderX=\"cylinderX.dat\" \n");
+	fprintf(plt_3d, "set table cylinderX \n");
 	fprintf(plt_3d, "splot 0 \n");
 	fprintf(plt_3d, "unset xrange \n");
 	fprintf(plt_3d, "unset yrange \n");
+}
+
+RBSTATIC void GenerateCylinder_AxisYDat(void)
+{
+	fprintf(plt_3d, "F_cylinderY_x(u)=cos(u)\n");
+	fprintf(plt_3d, "F_cylinderY_y(v)=v\n");
+	fprintf(plt_3d, "F_cylinderY_z(u)=-sin(u)\n");
+
+	fprintf(plt_3d, "set xrange [-pi:pi] \n");
+	fprintf(plt_3d, "set yrange [0:1] \n");
+
+	fprintf(plt_3d, "set samples 24 \n");
+	fprintf(plt_3d, "set isosamples 2 \n");
+
+	fprintf(plt_3d, "cylinderY=\"cylinderY.dat\" \n");
+	fprintf(plt_3d, "set table cylinderY \n");
+	fprintf(plt_3d, "splot 0 \n");
+	fprintf(plt_3d, "unset xrange \n");
+	fprintf(plt_3d, "unset yrange \n");
+}
+
+RBSTATIC void GenerateCylinder_AxisZDat(void)
+{
+	fprintf(plt_3d, "F_cylinderZ_x(u)=cos(u)\n");
+	fprintf(plt_3d, "F_cylinderZ_y(u)=sin(u)\n");
+	fprintf(plt_3d, "F_cylinderZ_z(v)=v\n");
+
+	fprintf(plt_3d, "set xrange [-pi:pi] \n");
+	fprintf(plt_3d, "set yrange [0:1] \n");
+
+	fprintf(plt_3d, "set samples 24 \n");
+	fprintf(plt_3d, "set isosamples 2 \n");
+
+	fprintf(plt_3d, "cylinderZ=\"cylinderZ.dat\" \n");
+	fprintf(plt_3d, "set table cylinderZ \n");
+	fprintf(plt_3d, "splot 0 \n");
+	fprintf(plt_3d, "unset xrange \n");
+	fprintf(plt_3d, "unset yrange \n");
+}
+
+
+RBSTATIC void GenerateCylinderDat(void)
+{
+	GenerateCylinder_AxisXDat();
+	GenerateCylinder_AxisYDat();
+	GenerateCylinder_AxisZDat();
 }
 
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
@@ -385,45 +435,58 @@ RBSTATIC void SplotData(void)
 	fprintf(plt_3d, "FSy=\"F_sphere_y($1,$2)\" \n");
 	fprintf(plt_3d, "FSz=\"F_sphere_z($1,$2)\" \n");
 
-	fprintf(plt_3d, "FCx=\"F_cylinder_x($1)\" \n");
-	fprintf(plt_3d, "FCy=\"F_cylinder_y($1)\" \n");
-	fprintf(plt_3d, "FCz=\"F_cylinder_z($2)\" \n");
+	fprintf(plt_3d, "FCX_x=\"F_cylinderX_x($2)\" \n");
+	fprintf(plt_3d, "FCX_y=\"F_cylinderX_y($1)\" \n");
+	fprintf(plt_3d, "FCX_z=\"F_cylinderX_z($1)\" \n");
+
+	fprintf(plt_3d, "FCY_x=\"F_cylinderY_x($1)\" \n");
+	fprintf(plt_3d, "FCY_y=\"F_cylinderY_y($2)\" \n");
+	fprintf(plt_3d, "FCY_z=\"F_cylinderY_z($1)\" \n");
+
+	fprintf(plt_3d, "FCZ_x=\"F_cylinderZ_x($1)\" \n");
+	fprintf(plt_3d, "FCZ_y=\"F_cylinderZ_y($1)\" \n");
+	fprintf(plt_3d, "FCZ_z=\"F_cylinderZ_z($2)\" \n");
 
 	GenerateObjectSplot(6u);
 	GenerateObjectSplot(7u);
 	GenerateObjectSplot(8u);
 	GenerateObjectSplot(9u);
 
-	fprintf(plt_3d," splot -1, \
-			cylinder using \
-							( ( (M6_[1] * (@FCx * L6_[1])) + (M6_[2] * (@FCy * L6_[1])) + (M6_[3] * (@FCz * L6_[3])) ) + P6_[1]):\
-							( ( (M6_[4] * (@FCx * L6_[1])) + (M6_[5] * (@FCy * L6_[1])) + (M6_[6] * (@FCz * L6_[3])) ) + P6_[2]):\
-							( ( (M6_[7] * (@FCx * L6_[1])) + (M6_[8] * (@FCy * L6_[1])) + (M6_[9] * (@FCz * L6_[3])) ) + P6_[3]) with pm3d, \
+	fprintf(plt_3d," splot -10, \
+			cylinderZ using \
+							( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
+							( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
+							( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with pm3d, \
 			\
-			cylinder using \
-							( ( (M6_[1] * (@FCx * L6_[1])) + (M6_[2] * (@FCy * L6_[1])) + (M6_[3] * (@FCz * L6_[3])) ) + P6_[1]):\
-							( ( (M6_[4] * (@FCx * L6_[1])) + (M6_[5] * (@FCy * L6_[1])) + (M6_[6] * (@FCz * L6_[3])) ) + P6_[2]):\
-							( ( (M6_[7] * (@FCx * L6_[1])) + (M6_[8] * (@FCy * L6_[1])) + (M6_[9] * (@FCz * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\", \
+			cylinderZ using \
+							( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
+							( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
+							( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\", \
+			\
+			cylinderY using \
+							( ( (M7_[1] * (@FCY_x * L7_[1])) + (M7_[2] * (@FCY_y * L7_[2])) + (M7_[3] * (@FCY_z * L7_[3])) ) + P7_[1]):\
+							( ( (M7_[4] * (@FCY_x * L7_[1])) + (M7_[5] * (@FCY_y * L7_[2])) + (M7_[6] * (@FCY_z * L7_[3])) ) + P7_[2]):\
+							( ( (M7_[7] * (@FCY_x * L7_[1])) + (M7_[8] * (@FCY_y * L7_[2])) + (M7_[9] * (@FCY_z * L7_[3])) ) + P7_[3]) with pm3d, \
+			\
+			cylinderY using \
+							( ( (M7_[1] * (@FCY_x * L7_[1])) + (M7_[2] * (@FCY_y * L7_[2])) + (M7_[3] * (@FCY_z * L7_[3])) ) + P7_[1]):\
+							( ( (M7_[4] * (@FCY_x * L7_[1])) + (M7_[5] * (@FCY_y * L7_[2])) + (M7_[6] * (@FCY_z * L7_[3])) ) + P7_[2]):\
+							( ( (M7_[7] * (@FCY_x * L7_[1])) + (M7_[8] * (@FCY_y * L7_[2])) + (M7_[9] * (@FCY_z * L7_[3])) ) + P7_[3]) with polygons fc \"steelblue\", \
+			\
+			cylinderX using \
+							( ( (M8_[1] * (@FCX_x * L8_[1])) + (M8_[2] * (@FCX_y * L8_[2])) + (M8_[3] * (@FCX_z * L8_[3])) ) + P8_[1]):\
+							( ( (M8_[4] * (@FCX_x * L8_[1])) + (M8_[5] * (@FCX_y * L8_[2])) + (M8_[6] * (@FCX_z * L8_[3])) ) + P8_[2]):\
+							( ( (M8_[7] * (@FCX_x * L8_[1])) + (M8_[8] * (@FCX_y * L8_[2])) + (M8_[9] * (@FCX_z * L8_[3])) ) + P8_[3]) with pm3d, \
+			\
+			cylinderX using \
+							( ( (M8_[1] * (@FCX_x * L8_[1])) + (M8_[2] * (@FCX_y * L8_[2])) + (M8_[3] * (@FCX_z * L8_[3])) ) + P8_[1]):\
+							( ( (M8_[4] * (@FCX_x * L8_[1])) + (M8_[5] * (@FCX_y * L8_[2])) + (M8_[6] * (@FCX_z * L8_[3])) ) + P8_[2]):\
+							( ( (M8_[7] * (@FCX_x * L8_[1])) + (M8_[8] * (@FCX_y * L8_[2])) + (M8_[9] * (@FCX_z * L8_[3])) ) + P8_[3]) with polygons fc \"steelblue\", \
 			\
 			sphere using \
-							( ( (M7_[1] * (@FSx * L7_[1])) + (M7_[2] * (@FSy * L7_[2])) + (M7_[3] * (@FSz * L7_[3])) ) + P7_[1]):\
-							( ( (M7_[4] * (@FSx * L7_[1])) + (M7_[5] * (@FSy * L7_[2])) + (M7_[6] * (@FSz * L7_[3])) ) + P7_[2]):\
-							( ( (M7_[7] * (@FSx * L7_[1])) + (M7_[8] * (@FSy * L7_[2])) + (M7_[9] * (@FSz * L7_[3])) ) + P7_[3]) with pm3d, \
-			\
-			sphere using \
-							( ( (M8_[1] * @FSx) + (M8_[2] * @FSy) + (M8_[3] * @FSz) ) * L8_[1] + P8_[1]):\
-							( ( (M8_[4] * @FSx) + (M8_[5] * @FSy) + (M8_[6] * @FSz) ) * L8_[1] + P8_[2]):\
-							( ( (M8_[7] * @FSx) + (M8_[8] * @FSy) + (M8_[9] * @FSz) ) * L8_[1] + P8_[3]) with pm3d, \
-			\
-			cylinder using \
-							( ( (M9_[1] * (@FCx * L9_[1])) + (M9_[2] * (@FCy * L9_[1])) + (M9_[3] * (@FCz * L9_[3])) ) + P9_[1]):\
-							( ( (M9_[4] * (@FCx * L9_[1])) + (M9_[5] * (@FCy * L9_[1])) + (M9_[6] * (@FCz * L9_[3])) ) + P9_[2]):\
-							( ( (M9_[7] * (@FCx * L9_[1])) + (M9_[8] * (@FCy * L9_[1])) + (M9_[9] * (@FCz * L9_[3])) ) + P9_[3]) with pm3d, \
-			\
-			cylinder using \
-							( ( (M9_[1] * (@FCx * L9_[1])) + (M9_[2] * (@FCy * L9_[1])) + (M9_[3] * (@FCz * L9_[3])) ) + P9_[1]):\
-							( ( (M9_[4] * (@FCx * L9_[1])) + (M9_[5] * (@FCy * L9_[1])) + (M9_[6] * (@FCz * L9_[3])) ) + P9_[2]):\
-							( ( (M9_[7] * (@FCx * L9_[1])) + (M9_[8] * (@FCy * L9_[1])) + (M9_[9] * (@FCz * L9_[3])) ) + P9_[3]) with polygons fc \"steelblue\" \
+							( ( (M9_[1] * @FSx) + (M9_[2] * @FSy) + (M9_[3] * @FSz) ) * L9_[1] + P9_[1]):\
+							( ( (M9_[4] * @FSx) + (M9_[5] * @FSy) + (M9_[6] * @FSz) ) * L9_[1] + P9_[2]):\
+							( ( (M9_[7] * @FSx) + (M9_[8] * @FSy) + (M9_[9] * @FSz) ) * L9_[1] + P9_[3]) with pm3d \
 			\
 			\n");
 }

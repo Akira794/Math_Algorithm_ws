@@ -230,7 +230,7 @@ void DbgCmd_PreStartProc(void)
 	BoxInit_T ObjectBox[OBJECT_MAXID] = { 0.0f };
 #if 1
 	RB_Vec3fCreate(300.0f, -200.0f, 100.0f, &(ObjectBox[1u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &(ObjectBox[1u].ObjectSize));
+	RB_Vec3fCreate(100.0f, -100.0f, 100.0f, &(ObjectBox[1u].ObjectSize));
 
 	RB_Vec3fCreate(-300.0f, -200.0f, 0.0f, &(ObjectBox[2u].ObjectPos));
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &(ObjectBox[2u].ObjectSize));
@@ -249,23 +249,24 @@ void DbgCmd_PreStartProc(void)
 	ObjectBox[5u].WidthType = 5u;
 #endif
 	//暫定・円柱
-	RB_Vec3fCreate(100.0f, -200.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
+	RB_Vec3fCreate(-300.0f, -300.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
 	RB_Vec3fCreate(200.0f, 200.0f, 500.0f, &(ObjectBox[6u].ObjectSize));
 	ObjectBox[6u].ShapeType = 2u;
 	ObjectBox[6u].WidthType = 3u;
-	//暫定 球体
-	RB_Vec3fCreate(300.0f, -500.0f, 400.0f, &(ObjectBox[7u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &(ObjectBox[7u].ObjectSize));
-	ObjectBox[7u].ShapeType = 1u;
+
+	RB_Vec3fCreate(300.0f, -500.0f, 500.0f, &(ObjectBox[7u].ObjectPos));
+	RB_Vec3fCreate(200.0f, 500.0f, 200.0f, &(ObjectBox[7u].ObjectSize));
+	ObjectBox[7u].ShapeType = 2u;
+	ObjectBox[7u].WidthType = 4u;
 
 	RB_Vec3fCreate(300.0f, 500.0f, 500.0f, &(ObjectBox[8u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 0.0f, 0.0f, &(ObjectBox[8u].ObjectSize));
-	ObjectBox[8u].ShapeType = 1u;
-
-	RB_Vec3fCreate(-300.0f, 400.0f, 200.0f, &(ObjectBox[9u].ObjectPos));
-	RB_Vec3fCreate(50.0f, 50.0f, 800.0f, &(ObjectBox[9u].ObjectSize));
-	ObjectBox[9u].ShapeType = 2u;
-	ObjectBox[9u].WidthType = 3u;
+	RB_Vec3fCreate(500.0f, 200.0f, 200.0f, &(ObjectBox[8u].ObjectSize));
+	ObjectBox[8u].ShapeType = 2u;
+	ObjectBox[8u].WidthType = 5u;
+	//暫定 球体
+	RB_Vec3fCreate(-300.0f, 400.0f, 250.0f, &(ObjectBox[9u].ObjectPos));
+	RB_Vec3fCreate(250.0f, 250.0f, 250.0f, &(ObjectBox[9u].ObjectSize));
+	ObjectBox[9u].ShapeType = 1u;
 
 	for(uint32_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
 	{
