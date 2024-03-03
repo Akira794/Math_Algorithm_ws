@@ -27,53 +27,38 @@ typedef struct
 	RB_Mat3f C_Rot;
 	RB_Vec3f C_AxisLength;
 	uint8_t WidthType; 
-}OBJECT_T;
+}DATA_T;
 //WidthType
 //0:Center, 1:X軸でy方向に幅, 2:Y軸でx方向に幅, 3:Z軸半径(xy)
 // 4:Y軸半径(xz), 5:X軸半径(yz)
 
-/*
 typedef struct
 {
-	uint32_t Id;
 	uint8_t CenterType;
 	RB_Vec3f BoxSize;
-}BOX_OBJ;
+}BOX_T;
 
+//Sphere-swept volume (SSV)
+//Sphere, Capsule, Cylinder
 typedef struct
 {
-	uint32_t Id;
 	float Radius;
-}SPHERE_OBJ;
-
-typedef struct
-{
-	uint32_t Id;
-	float Radius;
-	float Height;
+	RB_Vec3f EndPos;
 	uint8_t AxisType;
-}CYLINDER_OBJ;
-
-typedef struct
-{
-	uint32_t Id;
-	float Radius;
-	float Height;
-	uint8_t AxisType;
-}CAPSULE_OBJ;
+}SSV_T;
 
 typedef struct
 {
 	uint32_t Id;//Max 20
-	uint8_t  Type;//0:Box, 1:Sphere, 2:Cylinder, 3:Capsule
 	RB_Vec3f CenterPos;
 	RB_Mat3f CenterRot;
-	BOX_OBJ Box;
-	SPHERE_OBJ Sphere;
-	CYLINDER_OBJ Cylinder;
-	CAPSULE_OBJ Capsule;
-}OBJECTDATA_T;
-*/
+	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder
+	bool TFMode;
+	BOX_T Box;
+	SSV_T Sphere;
+	SSV_T Capsule;
+	SSV_T Cylinder;
+}OBJECT_T;
 
 void DbgCmd_Init(void);
 void DbgCmd_PreStartProc(void);

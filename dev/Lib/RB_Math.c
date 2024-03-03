@@ -116,6 +116,40 @@ void RB_Vec3fNormalize(RBCONST RB_Vec3f *v, RB_Vec3f *v_ans)
 	}
 }
 
+float CalcAngleBetweenVec3f(uint8_t axis, RBCONST RB_Vec3f *rel)
+{
+	float num, deno;
+	RB_Vec3f nmlvec;
+
+	if(axis > 2)
+	{
+		num = 1.0f;
+		deno = 1.0f;
+	}
+	else
+	{
+		switch(axis)
+		{
+			case 0:
+				RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &nmlvec);
+				break;
+
+			case 1:
+				RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &nmlvec);
+				break;
+
+			case 2:
+				RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &nmlvec);
+				break;
+		}
+		num = RB_Vec3fDot(rel, &nmlvec);
+		deno = (RB_Vec3fNorm(rel)) * (RB_Vec3fNorm(&nmlvec));
+	}
+
+	float phi = ((float)RB_PI * 0.5f) - acosf( num / deno);
+	return phi;
+}
+
 void RB_Mat3fCreate(
 RBCONST float e11, RBCONST float e12, RBCONST float e13,
 RBCONST float e21, RBCONST float e22, RBCONST float e23,

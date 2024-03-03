@@ -19,6 +19,9 @@ RBSTATIC void GenerateCylinderDat(void);
 
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object);
 RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object);
+
+//RBSTATIC void DrawBox(uint32_t id, DATA_T *Object);
+//RBSTATIC void DrawObjectSize(uint32_t id, DATA_T *Object);
 RBSTATIC void DrawObject(void);
 
 RBSTATIC void UnsetConfig(void);
@@ -137,16 +140,17 @@ RBSTATIC void GenerateCylinderDat(void)
 
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 {
+	BOX_T *Box_obj = &Object->Box;
 	uint32_t object_num = (6 * (id + 1u)) - 5;
 	RB_Vec3f BoxInitArray[8u] = { 0.0f };
 	RB_Vec3f BoxVertex[8u] = { 0.0f };
 	RB_Vec3f width3f;
 
-	float lx = RB_Vec3fGetElem(&Object->C_AxisLength, 0u);
-	float ly = RB_Vec3fGetElem(&Object->C_AxisLength, 1u);
-	float lz = RB_Vec3fGetElem(&Object->C_AxisLength, 2u);
+	float lx = RB_Vec3fGetElem(&(Box_obj->BoxSize), 0u);
+	float ly = RB_Vec3fGetElem(&(Box_obj->BoxSize), 1u);
+	float lz = RB_Vec3fGetElem(&(Box_obj->BoxSize), 2u);
 
-switch(Object->WidthType)
+switch(Box_obj->CenterType)
 {
 	case 1:
 		RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);//X軸でy方向に幅
@@ -186,12 +190,12 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 	RB_Vec3fCreate(   lx,   ly,   lz, &(BoxInitArray[6u]));//G6
 	RB_Vec3fCreate(   lx, wh_y,   lz, &(BoxInitArray[7u]));//H7
 
-	//C_Rotを反映
+	//CenterRotを反映
 	for(uint8_t i = 0u; i < 8u; i++)
 	{
 		RB_Vec3f RotVec;
-		RB_MulMatVec3f(&Object->C_Rot, &BoxInitArray[i], &RotVec);
-		RB_Vec3fAdd(&Object->C_Pos, &RotVec, &BoxVertex[i]);
+		RB_MulMatVec3f(&Object->CenterRot, &BoxInitArray[i], &RotVec);
+		RB_Vec3fAdd(&Object->CenterPos, &RotVec, &BoxVertex[i]);
 	}
 
 	//描画する
@@ -266,13 +270,14 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 	);
 }
 
-RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object)
+RBSTATIC void DrawBoxObjectSize(uint32_t id, OBJECT_T *Object)
 {
 	uint32_t arrow_num = ( 3 * (id + 100u)) -2;
 
-	RB_Vec3f *v = &Object->C_Pos;
-	RB_Vec3f *l = &Object->C_AxisLength;
-	RB_Mat3f *m = &Object->C_Rot;
+	RB_Vec3f *v = &Object->CenterPos;
+	RB_Mat3f *m = &Object->CenterRot;
+	BOX_T *Box_obj = &Object->Box;
+	RB_Vec3f *l = &Box_obj->BoxSize;
 
 	fprintf(plt_3d,"set colorsequence default\n");
 	fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
@@ -307,7 +312,7 @@ RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object)
 	fprintf(plt_3d,"set colorsequence classic\n");
 }
 
-RBSTATIC void DrawObject(void)
+RBSTATIC void DrawAreaObject(void)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
@@ -318,8 +323,20 @@ RBSTATIC void DrawObject(void)
 		{
 			DrawBox(i, &ObjectData[i]);
 		}
-		DrawObjectSize(i, &ObjectData[i]);
 	}
+
+}
+
+RBSTATIC void DrawObjectArrow(void)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
+	{
+		DrawBoxObjectSize(i, &ObjectData[i]);
+	}
+
 }
 
 RBSTATIC void ColorConfig(void)
@@ -417,91 +434,307 @@ RBSTATIC void GenerateObjectSplot(uint8_t id)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+#if 0
+//角度のためし
+	uint8_t AxisType = 0u;
+	RB_Vec3f rel;
+	RB_Mat3f OffsetRot;
+	RB_Vec3f RotAxis = f_RB_Vec3fzero;
+
+	RB_Vec3fCreate(0.0f, 100.0f, 100.0f, &rel);
+	float radian = 0.0f;
+	switch(AxisType)
+	{
+		case 0:
+			RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &RotAxis);
+			radian = CalcAngleBetweenVec3f(2u, &rel);
+			break;
+
+		case 1:
+			RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &RotAxis);
+			radian = CalcAngleBetweenVec3f(0u, &rel);
+			break;
+
+		case 2:
+			RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &RotAxis);
+			radian = CalcAngleBetweenVec3f(1u, &rel);
+			break;
+
+		default:
+				NO_STATEMENT;
+			break;
+
+	}
+	
+	RB_AxisRotateMat3f(&RotAxis, radian, &OffsetRot);
+	RB_Mat3f NowRot = ObjectData[id].CenterRot;
+	RB_MulMatMat3f(&NowRot, &OffsetRot, &(ObjectData[id].CenterRot));
+//==============
+#endif
+
 	//注意! gnuplot の配列は0からではなく1からスタート
 	fprintf(plt_3d, "array M%u_[9] = [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f]\n", \
 		id, \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 0u, 2u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 1u, 2u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 0u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 1u), \
-		RB_Mat3fGetElem(&(ObjectData[id].C_Rot), 2u, 2u));
-
-	fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
-		id, \
-		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 1u), \
-		RB_Vec3fGetElem(&(ObjectData[id].C_AxisLength), 2u));
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 0u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 0u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 0u, 2u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 1u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 1u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 1u, 2u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 2u, 0u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 2u, 1u), \
+		RB_Mat3fGetElem(&(ObjectData[id].CenterRot), 2u, 2u));
 
 	fprintf(plt_3d, "array P%u_[3] = [%.3f, %.3f, %.3f]\n", \
 		id, \
-		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 0u), \
-		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 1u), \
-		RB_Vec3fGetElem(&(ObjectData[id].C_Pos), 2u));
+		RB_Vec3fGetElem(&(ObjectData[id].CenterPos), 0u), \
+		RB_Vec3fGetElem(&(ObjectData[id].CenterPos), 1u), \
+		RB_Vec3fGetElem(&(ObjectData[id].CenterPos), 2u));
+
+	switch(ObjectData[id].ShapeType)
+	{
+		case 2:
+				SSV_T *Capsule_obj = &(ObjectData[id].Capsule);
+				uint8_t CapsuleAxisType = Capsule_obj->AxisType;
+				RB_Vec3f CapsuleEndPos = Capsule_obj->EndPos;
+
+				switch(CapsuleAxisType)
+				{
+					case 0u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								CapsuleEndPos.e[0u], \
+								Capsule_obj->Radius, \
+								Capsule_obj->Radius);
+						break;
+
+					case 1u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								Capsule_obj->Radius, \
+								CapsuleEndPos.e[1u], \
+								Capsule_obj->Radius);
+						break;
+
+					case 2u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								Capsule_obj->Radius, \
+								Capsule_obj->Radius, \
+								CapsuleEndPos.e[2u]);
+						break;
+
+					default:
+						break;
+				}
+			break;
+
+		case 3:
+				SSV_T *Cylinder_obj = &(ObjectData[id].Cylinder);
+				uint8_t CylinderAxisType = Cylinder_obj->AxisType;
+				RB_Vec3f CylinderEndPos = Cylinder_obj->EndPos;
+
+				switch(CylinderAxisType)
+				{
+					case 0u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								CylinderEndPos.e[0u], \
+								Cylinder_obj->Radius, \
+								Cylinder_obj->Radius);
+						break;
+
+					case 1u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								Cylinder_obj->Radius, \
+								CylinderEndPos.e[1u], \
+								Cylinder_obj->Radius);
+						break;
+
+					case 2u:
+							fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+								id, \
+								Cylinder_obj->Radius, \
+								Cylinder_obj->Radius, \
+								CylinderEndPos.e[2u]);
+						break;
+
+					default:
+						break;
+				}
+			break;
+
+		default:
+				SSV_T *Sphere_obj = &(ObjectData[id].Sphere);
+				fprintf(plt_3d, "array L%u_[3] = [%.3f, %.3f, %.3f]\n", \
+					id, \
+					Sphere_obj->Radius, \
+					0.0f, \
+					0.0f );
+			break;
+	}
+
+}
+
+RBSTATIC void SphereFprintf(void)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t id = 6u;
+
+	GenerateObjectSplot(id);
+	fprintf(plt_3d," splot -10, \
+			sphere using \
+							( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + P6_[1]):\
+							( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + P6_[2]):\
+							( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + P6_[3]) with pm3d \
+			\
+	\n");	
+}
+
+RBSTATIC void CapsuleFprintf(void)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t id = 6u;
+
+	GenerateObjectSplot(id);
+
+	SSV_T capsule_obj = { 0 };
+	capsule_obj = ObjectData[id].Capsule;
+
+	switch(capsule_obj.AxisType)
+	{
+		case 2:
+			fprintf(plt_3d," splot -10, \
+					\
+					cylinderZ using \
+									( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with pm3d, \
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + P6_[3]) with pm3d ,\
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + ( (M6_[3] * L6_[3]) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + ( (M6_[6] * L6_[3]) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + ( (M6_[9] * L6_[3]) ) + P6_[3]) with pm3d \
+									\
+					\
+					\n");
+			break;
+
+		case 1:
+			fprintf(plt_3d," splot -10, \
+					\
+					cylinderY using \
+									( ( (M6_[1] * (@FCY_x * L6_[1])) + (M6_[2] * (@FCY_y * L6_[2])) + (M6_[3] * (@FCY_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCY_x * L6_[1])) + (M6_[5] * (@FCY_y * L6_[2])) + (M6_[6] * (@FCY_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCY_x * L6_[1])) + (M6_[8] * (@FCY_y * L6_[2])) + (M6_[9] * (@FCY_z * L6_[3])) ) + P6_[3]) with pm3d, \
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + P6_[3]) with pm3d ,\
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + ( (M6_[2] * L6_[2]) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + ( (M6_[5] * L6_[2]) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + ( (M6_[8] * L6_[2]) ) + P6_[3]) with pm3d \
+									\
+					\
+					\n");
+			break;
+
+		case 0:
+			fprintf(plt_3d," splot -10, \
+					\
+					cylinderX using \
+									( ( (M6_[1] * (@FCX_x * L6_[1])) + (M6_[2] * (@FCX_y * L6_[2])) + (M6_[3] * (@FCX_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCX_x * L6_[1])) + (M6_[5] * (@FCX_y * L6_[2])) + (M6_[6] * (@FCX_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCX_x * L6_[1])) + (M6_[8] * (@FCX_y * L6_[2])) + (M6_[9] * (@FCX_z * L6_[3])) ) + P6_[3]) with pm3d, \
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[2])) + (M6_[2] * (@FSy * L6_[2])) + (M6_[3] * (@FSz * L6_[2])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[2])) + (M6_[5] * (@FSy * L6_[2])) + (M6_[6] * (@FSz * L6_[2])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[2])) + (M6_[8] * (@FSy * L6_[2])) + (M6_[9] * (@FSz * L6_[2])) ) + P6_[3]) with pm3d ,\
+					sphere using \
+									( ( (M6_[1] * (@FSx * L6_[2])) + (M6_[2] * (@FSy * L6_[2])) + (M6_[3] * (@FSz * L6_[2])) ) + ( (M6_[1] * L6_[1]) ) + P6_[1]):\
+									( ( (M6_[4] * (@FSx * L6_[2])) + (M6_[5] * (@FSy * L6_[2])) + (M6_[6] * (@FSz * L6_[2])) ) + ( (M6_[4] * L6_[1]) ) + P6_[2]):\
+									( ( (M6_[7] * (@FSx * L6_[2])) + (M6_[8] * (@FSy * L6_[2])) + (M6_[9] * (@FSz * L6_[2])) ) + ( (M6_[7] * L6_[1]) ) + P6_[3]) with pm3d \
+									\
+					\
+					\n");
+			break;
+
+		default:	
+			break;
+	}
+}
+
+RBSTATIC void CylinderFprintf(void)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t id = 6u;
+
+	GenerateObjectSplot(id);
+
+	SSV_T cylinder_obj = { 0 };
+	cylinder_obj = ObjectData[id].Cylinder;
+
+	switch(cylinder_obj.AxisType)
+	{
+		case 2:
+			fprintf(plt_3d," splot -10, \
+					\
+					cylinderZ using \
+									( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with pm3d, \
+					\
+					cylinderZ using \
+									( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\"\n");
+			break;
+
+		case 1:
+			fprintf(plt_3d," splot -10, \
+					\
+					cylinderY using \
+									( ( (M6_[1] * (@FCY_x * L6_[1])) + (M6_[2] * (@FCY_y * L6_[2])) + (M6_[3] * (@FCY_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCY_x * L6_[1])) + (M6_[5] * (@FCY_y * L6_[2])) + (M6_[6] * (@FCY_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCY_x * L6_[1])) + (M6_[8] * (@FCY_y * L6_[2])) + (M6_[9] * (@FCY_z * L6_[3])) ) + P6_[3]) with pm3d, \
+					\
+					cylinderY using \
+									( ( (M6_[1] * (@FCY_x * L6_[1])) + (M6_[2] * (@FCY_y * L6_[2])) + (M6_[3] * (@FCY_z * L6_[3])) ) + P6_[1]):\
+									( ( (M6_[4] * (@FCY_x * L6_[1])) + (M6_[5] * (@FCY_y * L6_[2])) + (M6_[6] * (@FCY_z * L6_[3])) ) + P6_[2]):\
+									( ( (M6_[7] * (@FCY_x * L6_[1])) + (M6_[8] * (@FCY_y * L6_[2])) + (M6_[9] * (@FCY_z * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\"\n");
+
+		case 0:
+		fprintf(plt_3d," splot -10, \
+				cylinderX using \
+								( ( (M6_[1] * (@FCX_x * L6_[1])) + (M6_[2] * (@FCX_y * L6_[2])) + (M6_[3] * (@FCX_z * L6_[3])) ) + P6_[1]):\
+								( ( (M6_[4] * (@FCX_x * L6_[1])) + (M6_[5] * (@FCX_y * L6_[2])) + (M6_[6] * (@FCX_z * L6_[3])) ) + P6_[2]):\
+								( ( (M6_[7] * (@FCX_x * L6_[1])) + (M6_[8] * (@FCX_y * L6_[2])) + (M6_[9] * (@FCX_z * L6_[3])) ) + P6_[3]) with pm3d, \
+				\
+				cylinderX using \
+								( ( (M6_[1] * (@FCX_x * L6_[1])) + (M6_[2] * (@FCX_y * L6_[2])) + (M6_[3] * (@FCX_z * L6_[3])) ) + P6_[1]):\
+								( ( (M6_[4] * (@FCX_x * L6_[1])) + (M6_[5] * (@FCX_y * L6_[2])) + (M6_[6] * (@FCX_z * L6_[3])) ) + P6_[2]):\
+								( ( (M6_[7] * (@FCX_x * L6_[1])) + (M6_[8] * (@FCX_y * L6_[2])) + (M6_[9] * (@FCX_z * L6_[3])) ) + P6_[3]) with polygons fc \"steelblue\"\n");
+		default:	
+			break;
+	}
 }
 
 RBSTATIC void SplotData(void)
 {
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
 
-	GenerateObjectSplot(6u);
-	GenerateObjectSplot(7u);
-	GenerateObjectSplot(8u);
-	GenerateObjectSplot(9u);
-
-	fprintf(plt_3d," splot -10, \
-			\
-			cylinderZ using \
-							( ( (M6_[1] * (@FCZ_x * L6_[1])) + (M6_[2] * (@FCZ_y * L6_[2])) + (M6_[3] * (@FCZ_z * L6_[3])) ) + P6_[1]):\
-							( ( (M6_[4] * (@FCZ_x * L6_[1])) + (M6_[5] * (@FCZ_y * L6_[2])) + (M6_[6] * (@FCZ_z * L6_[3])) ) + P6_[2]):\
-							( ( (M6_[7] * (@FCZ_x * L6_[1])) + (M6_[8] * (@FCZ_y * L6_[2])) + (M6_[9] * (@FCZ_z * L6_[3])) ) + P6_[3]) with pm3d, \
-			sphere using \
-							( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + P6_[1]):\
-							( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + P6_[2]):\
-							( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + P6_[3]) with pm3d ,\
-			sphere using \
-							( ( (M6_[1] * (@FSx * L6_[1])) + (M6_[2] * (@FSy * L6_[1])) + (M6_[3] * (@FSz * L6_[1])) ) + ( (M6_[3] * L6_[3]) ) + P6_[1]):\
-							( ( (M6_[4] * (@FSx * L6_[1])) + (M6_[5] * (@FSy * L6_[1])) + (M6_[6] * (@FSz * L6_[1])) ) + ( (M6_[6] * L6_[3]) ) + P6_[2]):\
-							( ( (M6_[7] * (@FSx * L6_[1])) + (M6_[8] * (@FSy * L6_[1])) + (M6_[9] * (@FSz * L6_[1])) ) + ( (M6_[9] * L6_[3]) ) + P6_[3]) with pm3d ,\
-							\
-							\
-			cylinderY using \
-							( ( (M7_[1] * (@FCY_x * L7_[1])) + (M7_[2] * (@FCY_y * L7_[2])) + (M7_[3] * (@FCY_z * L7_[3])) ) + P7_[1]):\
-							( ( (M7_[4] * (@FCY_x * L7_[1])) + (M7_[5] * (@FCY_y * L7_[2])) + (M7_[6] * (@FCY_z * L7_[3])) ) + P7_[2]):\
-							( ( (M7_[7] * (@FCY_x * L7_[1])) + (M7_[8] * (@FCY_y * L7_[2])) + (M7_[9] * (@FCY_z * L7_[3])) ) + P7_[3]) with pm3d, \
-			sphere using \
-							( ( (M7_[1] * (@FSx * L7_[1])) + (M7_[2] * (@FSy * L7_[1])) + (M7_[3] * (@FSz * L7_[1])) ) + P7_[1]):\
-							( ( (M7_[4] * (@FSx * L7_[1])) + (M7_[5] * (@FSy * L7_[1])) + (M7_[6] * (@FSz * L7_[1])) ) + P7_[2]):\
-							( ( (M7_[7] * (@FSx * L7_[1])) + (M7_[8] * (@FSy * L7_[1])) + (M7_[9] * (@FSz * L7_[1])) ) + P7_[3]) with pm3d ,\
-			sphere using \
-							( ( (M7_[1] * (@FSx * L7_[1])) + (M7_[2] * (@FSy * L7_[1])) + (M7_[3] * (@FSz * L7_[1])) ) + ( (M7_[2] * L7_[2]) ) + P7_[1]):\
-							( ( (M7_[4] * (@FSx * L7_[1])) + (M7_[5] * (@FSy * L7_[1])) + (M7_[6] * (@FSz * L7_[1])) ) + ( (M7_[5] * L7_[2]) ) + P7_[2]):\
-							( ( (M7_[7] * (@FSx * L7_[1])) + (M7_[8] * (@FSy * L7_[1])) + (M7_[9] * (@FSz * L7_[1])) ) + ( (M7_[8] * L7_[2]) ) + P7_[3]) with pm3d ,\
-							\
-							\
-			cylinderX using \
-							( ( (M8_[1] * (@FCX_x * L8_[1])) + (M8_[2] * (@FCX_y * L8_[2])) + (M8_[3] * (@FCX_z * L8_[3])) ) + P8_[1]):\
-							( ( (M8_[4] * (@FCX_x * L8_[1])) + (M8_[5] * (@FCX_y * L8_[2])) + (M8_[6] * (@FCX_z * L8_[3])) ) + P8_[2]):\
-							( ( (M8_[7] * (@FCX_x * L8_[1])) + (M8_[8] * (@FCX_y * L8_[2])) + (M8_[9] * (@FCX_z * L8_[3])) ) + P8_[3]) with pm3d, \
-			sphere using \
-							( ( (M8_[1] * (@FSx * L8_[2])) + (M8_[2] * (@FSy * L8_[2])) + (M8_[3] * (@FSz * L8_[2])) ) + P8_[1]):\
-							( ( (M8_[4] * (@FSx * L8_[2])) + (M8_[5] * (@FSy * L8_[2])) + (M8_[6] * (@FSz * L8_[2])) ) + P8_[2]):\
-							( ( (M8_[7] * (@FSx * L8_[2])) + (M8_[8] * (@FSy * L8_[2])) + (M8_[9] * (@FSz * L8_[2])) ) + P8_[3]) with pm3d ,\
-			sphere using \
-							( ( (M8_[1] * (@FSx * L8_[2])) + (M8_[2] * (@FSy * L8_[2])) + (M8_[3] * (@FSz * L8_[2])) ) + ( (M8_[1] * L8_[1]) ) + P8_[1]):\
-							( ( (M8_[4] * (@FSx * L8_[2])) + (M8_[5] * (@FSy * L8_[2])) + (M8_[6] * (@FSz * L8_[2])) ) + ( (M8_[4] * L8_[1]) ) + P8_[2]):\
-							( ( (M8_[7] * (@FSx * L8_[2])) + (M8_[8] * (@FSy * L8_[2])) + (M8_[9] * (@FSz * L8_[2])) ) + ( (M8_[7] * L8_[1]) ) + P8_[3]) with pm3d ,\
-							\
-							\
-							\
-			sphere using \
-							( ( (M9_[1] * (@FSx * L9_[1])) + (M9_[2] * (@FSy * L9_[1])) + (M9_[3] * (@FSz * L9_[1])) ) + P9_[1]):\
-							( ( (M9_[4] * (@FSx * L9_[1])) + (M9_[5] * (@FSy * L9_[1])) + (M9_[6] * (@FSz * L9_[1])) ) + P9_[2]):\
-							( ( (M9_[7] * (@FSx * L9_[1])) + (M9_[8] * (@FSy * L9_[1])) + (M9_[9] * (@FSz * L9_[1])) ) + P9_[3]) with pm3d \
-			\
-			\n");
+	//SphereFprintf();
+	//CylinderFprintf();
+	CapsuleFprintf();
 }
 
 RBSTATIC void DrawWorldCoordinateSys(void)
@@ -518,15 +751,14 @@ RBSTATIC void DrawCoordinateSys(void)
 	for(uint8_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
 	{
 		float axis_length = (ObjectData[id].TFMode) ? 200.0f : 0.0f;
-		CoordinateSys_Config(id, &(ObjectData[id].C_Pos), axis_length, &(ObjectData[id].C_Rot));
-
+		CoordinateSys_Config(id, &(ObjectData[id].CenterPos), axis_length, &(ObjectData[id].CenterRot));
 
 		uint32_t label_num = id + 100u;
 
 		RB_Vec3f LabelPos;
 		RB_Vec3f Offset;
 		RB_Vec3fCreate(50.0f, 50.0f, 100.0f, &Offset);
-		RB_Vec3fAdd(&(ObjectData[id].C_Pos), &Offset, &LabelPos);
+		RB_Vec3fAdd(&(ObjectData[id].CenterPos), &Offset, &LabelPos);
 		fprintf(plt_3d, "set label %u \'id:%u \' font \"Times,10\" at %.3f, %.3f, %.3f \n", \
 		label_num, \
 		id, \
@@ -566,9 +798,10 @@ void GnuPlot_Cycle(void)
 //コマンドで変化するものたち
 	DrawWorldCoordinateSys();
 	DrawCoordinateSys();
-
+	DrawAreaObject();
+	DrawObjectArrow();
 	SplotData();
-	DrawObject();
+
 	//fprintf(plt_3d, "e\n");
 	fflush(plt_3d);
 }

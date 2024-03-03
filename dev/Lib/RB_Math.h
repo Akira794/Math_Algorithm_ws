@@ -36,6 +36,7 @@ void RB_Vec3fCross(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2, RB_Vec3f *v_ans);
 
 float RB_Vec3fNorm(RBCONST RB_Vec3f *v);
 void RB_Vec3fNormalize(RBCONST RB_Vec3f *v, RB_Vec3f *v_ans);
+float CalcAngleBetweenVec3f(uint8_t axis, RBCONST RB_Vec3f *rel);
 
 //Matrix3f============================================================
 void RB_Mat3fCreate(
