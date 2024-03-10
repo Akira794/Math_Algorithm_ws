@@ -232,11 +232,11 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 	printf("ID: %u\t", id);
 	if(flag)
 	{
-		printf("Mode: Cmd CenterPos\n");
+		printf("Mode: Pos X[+:w, -:s], Y[+:d, -:a], Z[+:k, -:m]\n");
 	}
 	else
 	{
-		printf("Mode: Cmd CenterRot\n");
+		printf("Mode: Rot Roll[+:w, -:s], Pitch[+:d, -:a], Yaw[+:k, -:m]\n");
 	}
 
 	if(f_ObjectData[id].TFMode)
@@ -383,18 +383,19 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//暫定 球体
 	ConfigPose(-300.0f, 400.0f, 500.0f, 0u, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 250.0f);
-
-	//シリンダー
-	ConfigPose(-300.0f, -400.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3f Rel;
-	RB_Vec3fCreate(600.0f, 0.0f, 0.0f, &Rel);
-	ConfigCylinderObject(&Pose, 100.0f, &Rel, 0u);
 #endif
+	//シリンダー
+	ConfigPose(0.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
+	RB_Vec3f Rel;
+	RB_Vec3fCreate(0.0f, 500.0f, 200.0f, &Rel);
+	ConfigCylinderObject(&Pose, 200.0f, &Rel, 0u);
+#if 0
 	//カプセル
 	ConfigPose(-300.0f, -400.0f, 500.0f, 0u, 0.0f, &Pose);
 	RB_Vec3f Rel;
 	RB_Vec3fCreate(500.0f, 0.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel, 0u);
+#endif
 #if 0
 
 	//暫定・カプセル
