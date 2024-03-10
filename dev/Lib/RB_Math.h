@@ -50,6 +50,7 @@ void RB_Mat3fSetElem(RB_Mat3f *m, RBCONST uint8_t r, RBCONST uint8_t c, RBCONST 
 void RB_MulMatVec3f(RBCONST RB_Mat3f *m, RBCONST RB_Vec3f *v, RB_Vec3f *mv_ans);
 void RB_MulMatMat3f(RBCONST RB_Mat3f *m1, RBCONST RB_Mat3f *m2, RB_Mat3f *m_ans);
 void RB_AxisRotateMat3f(RBCONST RB_Vec3f *v_axis, RBCONST float rad, RB_Mat3f *m_ans);
+void RB_VecRotateVec3f(float rad, RBCONST RB_Vec3f *norm, RBCONST RB_Vec3f *rel, RB_Vec3f *v_ans);
 
 void RB_Mat3fTermOut(RBCONST char *str, RBCONST RB_Mat3f *m);
 void RB_Vec3fTermOut(RBCONST char *str, RBCONST RB_Vec3f *v);

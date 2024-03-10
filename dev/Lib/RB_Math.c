@@ -249,6 +249,27 @@ void RB_AxisRotateMat3f(RBCONST RB_Vec3f *v_axis, RBCONST float rad, RB_Mat3f *m
 	memcpy( m_ans, &m_ret, sizeof(RB_Mat3f));
 }
 
+void RB_VecRotateVec3f(float rad, RBCONST RB_Vec3f *norm, RBCONST RB_Vec3f *rel, RB_Vec3f *v_ans)
+{
+	RB_Mat3f m_ret;
+	RBCONST float eps = 1E-05f;
+
+	//角度に対する三角関数の計算値を格納
+	float Cosq = cosf(rad);
+	float Sinq = sinf(rad);
+	float CosDeriv = 1.0f - Cosq;
+
+	float Dot_NormRelVec = RB_Vec3fDot(norm, rel);
+	RB_Vec3f Cross_NormRelVec;
+	RB_Vec3fCross(norm, rel, &Cross_NormRelVec);
+
+	v_ans->e[0] = (CosDeriv * Dot_NormRelVec) * (norm->e[0]) + Cosq * (rel->e[0]) + Sinq * (Cross_NormRelVec.e[0]);
+	v_ans->e[1] = (CosDeriv * Dot_NormRelVec) * (norm->e[1]) + Cosq * (rel->e[1]) + Sinq * (Cross_NormRelVec.e[1]);
+	v_ans->e[2] = (CosDeriv * Dot_NormRelVec) * (norm->e[2]) + Cosq * (rel->e[2]) + Sinq * (Cross_NormRelVec.e[2]);
+
+}
+
+
 void RB_Mat3fTermOut(RBCONST char *str, RBCONST RB_Mat3f *m)
 {
 	printf("\n %s >>\n", str);
