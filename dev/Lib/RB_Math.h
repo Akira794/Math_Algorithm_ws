@@ -33,6 +33,7 @@ void RB_Vec3fSub(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2, RB_Vec3f *v_ans);
 bool RB_Vec3fMatch(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2);
 float RB_Vec3fDot(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2);
 void RB_Vec3fCross(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2, RB_Vec3f *v_ans);
+void RB_CalcVerticalVec3f(RBCONST RB_Vec3f *v1, RB_Vec3f *v_ans);
 
 float RB_Vec3fNorm(RBCONST RB_Vec3f *v);
 void RB_Vec3fNormalize(RBCONST RB_Vec3f *v, RB_Vec3f *v_ans);

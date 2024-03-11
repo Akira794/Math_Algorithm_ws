@@ -84,6 +84,20 @@ void RB_Vec3fCross(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2, RB_Vec3f *v_ans)
 	v_ans->e[2] = v1->e[0] * v2->e[1] - v1->e[1] * v2->e[0];
 }
 
+void RB_CalcVerticalVec3f(RBCONST RB_Vec3f *v1, RB_Vec3f *v_ans)
+{
+	RB_Vec3f tmp, v2;
+	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &tmp);
+
+	if(RB_Vec3fMatch(&tmp, v1))
+	{
+		RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &tmp);
+	}
+
+	RB_Vec3fCross(v1, &tmp, &v2);
+	RB_Vec3fNormalize(&v2, v_ans);
+}
+
 float RB_Vec3fNorm(RBCONST RB_Vec3f *v)
 {
 	return sqrtf(RB_Vec3fDot(v,v));
