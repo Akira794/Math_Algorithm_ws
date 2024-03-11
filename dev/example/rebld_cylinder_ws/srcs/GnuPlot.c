@@ -46,26 +46,102 @@ RBSTATIC void DrawGround(float z)
 	);
 }
 
-RBSTATIC void RightVec3f(RBCONST RB_Vec3f *v1, RB_Vec3f *v_ans)
+RBSTATIC void DrawCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
 {
-	RB_Vec3f tmp, v2;
-	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &tmp);
+	uint8_t k = (j == 23u) ? 0u : (j + 1u);
 
-	if(RB_Vec3fMatch(&tmp, v1))
-	{
-		RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &tmp);
-	}
-
-	RB_Vec3fCross(v1, &tmp, &v2);
-	RB_Vec3fNormalize(&v2, v_ans);
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
+	fprintf(plt_3d, "set obj %u polygon from \
+		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		depthorder fillcolor \"steelblue\" \n", \
+		id,
+		RB_Vec3fGetElem(&CircleVtexBottom[j], 0u),RB_Vec3fGetElem(&CircleVtexBottom[j], 1u),RB_Vec3fGetElem(&CircleVtexBottom[j], 2u), \
+		RB_Vec3fGetElem(&CircleVtexBottom[k], 0u),RB_Vec3fGetElem(&CircleVtexBottom[k], 1u),RB_Vec3fGetElem(&CircleVtexBottom[k], 2u), \
+		RB_Vec3fGetElem(&CircleVtexTop[k], 0u),RB_Vec3fGetElem(&CircleVtexTop[k], 1u),RB_Vec3fGetElem(&CircleVtexTop[k], 2u), \
+		RB_Vec3fGetElem(&CircleVtexTop[j], 0u),RB_Vec3fGetElem(&CircleVtexTop[j], 1u),RB_Vec3fGetElem(&CircleVtexTop[j], 2u), \
+		RB_Vec3fGetElem(&CircleVtexBottom[j], 0u),RB_Vec3fGetElem(&CircleVtexBottom[j], 1u),RB_Vec3fGetElem(&CircleVtexBottom[j], 2u) \
+	);
 }
 
-RBSTATIC void DrawCircle(void)
+RBSTATIC void DrawCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
+{
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
+	fprintf(plt_3d, "set obj %u polygon from \
+		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		to %.3f,%.3f,%.3f \
+		depthorder fillcolor \"%s\" \n", \
+		id,
+		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[1u], 0u),RB_Vec3fGetElem(&CircleVtex[1u], 1u),RB_Vec3fGetElem(&CircleVtex[1u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[2u], 0u),RB_Vec3fGetElem(&CircleVtex[2u], 1u),RB_Vec3fGetElem(&CircleVtex[2u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[3u], 0u),RB_Vec3fGetElem(&CircleVtex[3u], 1u),RB_Vec3fGetElem(&CircleVtex[3u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[4u], 0u),RB_Vec3fGetElem(&CircleVtex[4u], 1u),RB_Vec3fGetElem(&CircleVtex[4u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[5u], 0u),RB_Vec3fGetElem(&CircleVtex[5u], 1u),RB_Vec3fGetElem(&CircleVtex[5u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[6u], 0u),RB_Vec3fGetElem(&CircleVtex[6u], 1u),RB_Vec3fGetElem(&CircleVtex[6u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[7u], 0u),RB_Vec3fGetElem(&CircleVtex[7u], 1u),RB_Vec3fGetElem(&CircleVtex[7u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[8u], 0u),RB_Vec3fGetElem(&CircleVtex[8u], 1u),RB_Vec3fGetElem(&CircleVtex[8u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[9u], 0u),RB_Vec3fGetElem(&CircleVtex[9u], 1u),RB_Vec3fGetElem(&CircleVtex[9u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[10u], 0u),RB_Vec3fGetElem(&CircleVtex[10u], 1u),RB_Vec3fGetElem(&CircleVtex[10u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[11u], 0u),RB_Vec3fGetElem(&CircleVtex[11u], 1u),RB_Vec3fGetElem(&CircleVtex[11u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[12u], 0u),RB_Vec3fGetElem(&CircleVtex[12u], 1u),RB_Vec3fGetElem(&CircleVtex[12u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[13u], 0u),RB_Vec3fGetElem(&CircleVtex[13u], 1u),RB_Vec3fGetElem(&CircleVtex[13u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[14u], 0u),RB_Vec3fGetElem(&CircleVtex[14u], 1u),RB_Vec3fGetElem(&CircleVtex[14u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[15u], 0u),RB_Vec3fGetElem(&CircleVtex[15u], 1u),RB_Vec3fGetElem(&CircleVtex[15u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[16u], 0u),RB_Vec3fGetElem(&CircleVtex[16u], 1u),RB_Vec3fGetElem(&CircleVtex[16u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[17u], 0u),RB_Vec3fGetElem(&CircleVtex[17u], 1u),RB_Vec3fGetElem(&CircleVtex[17u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[18u], 0u),RB_Vec3fGetElem(&CircleVtex[18u], 1u),RB_Vec3fGetElem(&CircleVtex[18u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[19u], 0u),RB_Vec3fGetElem(&CircleVtex[19u], 1u),RB_Vec3fGetElem(&CircleVtex[19u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[20u], 0u),RB_Vec3fGetElem(&CircleVtex[20u], 1u),RB_Vec3fGetElem(&CircleVtex[20u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[21u], 0u),RB_Vec3fGetElem(&CircleVtex[21u], 1u),RB_Vec3fGetElem(&CircleVtex[21u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[22u], 0u),RB_Vec3fGetElem(&CircleVtex[22u], 1u),RB_Vec3fGetElem(&CircleVtex[22u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[23u], 0u),RB_Vec3fGetElem(&CircleVtex[23u], 1u),RB_Vec3fGetElem(&CircleVtex[23u], 2u), \
+		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u), \
+		str \
+	);
+}
+
+RBSTATIC void DrawCylinder(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos)
+{
+	float objectsolid_val = 0.5;
+	RB_Vec3f CircleVtexTop[24u] = { 0.0f };
+	RB_Vec3f CircleVtexBottom[24u] = { 0.0f };
+	RB_Vec3f EndCircle;
+
+	RB_Vec3fAdd(axis, rel, &EndCircle);
+
+	for(uint8_t i = 0u; i < 24u; i++)
+	{
+		RB_Vec3f BottomOffset;
+		RB_Vec3f TopOffset;
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), norm, rel, &BottomOffset);
+		RB_Vec3fAdd(pos, &BottomOffset, &CircleVtexBottom[i]);
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), norm, &EndCircle, &TopOffset);
+		RB_Vec3fAdd(pos, &TopOffset, &CircleVtexTop[i]);
+	}
+
+	//円柱の底面・上面
+	DrawCylinderSurface(id, objectsolid_val, CircleVtexBottom, "#0918e6");
+	id++;
+	DrawCylinderSurface(id, objectsolid_val, CircleVtexTop, "steelblue");
+
+	//円柱側面
+	for(uint8_t i = 0u; i < 24; i++)
+	{
+		id++;
+		DrawCylinderSide(id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
+	}
+}
+
+RBSTATIC void DrawTest(void)
 {
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+	///Cylinderを作成
 	RB_Vec3f CenterPos = ObjectData[6u].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[6u].CenterRot;
 
@@ -73,105 +149,17 @@ RBSTATIC void DrawCircle(void)
 	float Radius = Cylinder.Radius;
 	RB_Vec3f EndPos = Cylinder.EndPos;
 
-	//https://suzulang.com/rightvector3d/
-	float objectsolid_val = 0.5;
-	RB_Vec3f CircleVtex[24u] = { 0.0f };
+	uint8_t start_id = 100u;
+	
 	RB_Vec3f Rel, Norm, Vertical, Axis;
 	RB_MulMatVec3f(&CenterRot, &EndPos, &Axis);
 
-	//float Radius = 200.0f;
-	//RB_Vec3fCreate(0.0f, 300.0f, 500.0f, &Axis);
-	RightVec3f(&Axis, &Vertical);
+	RB_CalcVerticalVec3f(&Axis, &Vertical);
 	RB_Vec3fCreate(((Radius)*(Vertical.e[0])), ((Radius)*(Vertical.e[1])), ((Radius)*(Vertical.e[2])), &Rel);
-	
 	RB_Vec3fNormalize(&Axis, &Norm);
 
-	for(uint8_t i = 0u; i < 24u; i++)
-	{
-		RB_Vec3f Offset;
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Norm, &Rel, &Offset);
-		RB_Vec3fAdd(&CenterPos, &Offset, &CircleVtex[i]);
-	}
-
-	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
-	fprintf(plt_3d, "set obj 100 polygon from \
-		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#0918e6\" \n", \
-		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[1u], 0u),RB_Vec3fGetElem(&CircleVtex[1u], 1u),RB_Vec3fGetElem(&CircleVtex[1u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[2u], 0u),RB_Vec3fGetElem(&CircleVtex[2u], 1u),RB_Vec3fGetElem(&CircleVtex[2u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[3u], 0u),RB_Vec3fGetElem(&CircleVtex[3u], 1u),RB_Vec3fGetElem(&CircleVtex[3u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[4u], 0u),RB_Vec3fGetElem(&CircleVtex[4u], 1u),RB_Vec3fGetElem(&CircleVtex[4u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[5u], 0u),RB_Vec3fGetElem(&CircleVtex[5u], 1u),RB_Vec3fGetElem(&CircleVtex[5u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[6u], 0u),RB_Vec3fGetElem(&CircleVtex[6u], 1u),RB_Vec3fGetElem(&CircleVtex[6u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[7u], 0u),RB_Vec3fGetElem(&CircleVtex[7u], 1u),RB_Vec3fGetElem(&CircleVtex[7u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[8u], 0u),RB_Vec3fGetElem(&CircleVtex[8u], 1u),RB_Vec3fGetElem(&CircleVtex[8u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[9u], 0u),RB_Vec3fGetElem(&CircleVtex[9u], 1u),RB_Vec3fGetElem(&CircleVtex[9u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[10u], 0u),RB_Vec3fGetElem(&CircleVtex[10u], 1u),RB_Vec3fGetElem(&CircleVtex[10u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[11u], 0u),RB_Vec3fGetElem(&CircleVtex[11u], 1u),RB_Vec3fGetElem(&CircleVtex[11u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[12u], 0u),RB_Vec3fGetElem(&CircleVtex[12u], 1u),RB_Vec3fGetElem(&CircleVtex[12u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[13u], 0u),RB_Vec3fGetElem(&CircleVtex[13u], 1u),RB_Vec3fGetElem(&CircleVtex[13u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[14u], 0u),RB_Vec3fGetElem(&CircleVtex[14u], 1u),RB_Vec3fGetElem(&CircleVtex[14u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[15u], 0u),RB_Vec3fGetElem(&CircleVtex[15u], 1u),RB_Vec3fGetElem(&CircleVtex[15u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[16u], 0u),RB_Vec3fGetElem(&CircleVtex[16u], 1u),RB_Vec3fGetElem(&CircleVtex[16u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[17u], 0u),RB_Vec3fGetElem(&CircleVtex[17u], 1u),RB_Vec3fGetElem(&CircleVtex[17u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[18u], 0u),RB_Vec3fGetElem(&CircleVtex[18u], 1u),RB_Vec3fGetElem(&CircleVtex[18u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[19u], 0u),RB_Vec3fGetElem(&CircleVtex[19u], 1u),RB_Vec3fGetElem(&CircleVtex[19u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[20u], 0u),RB_Vec3fGetElem(&CircleVtex[20u], 1u),RB_Vec3fGetElem(&CircleVtex[20u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[21u], 0u),RB_Vec3fGetElem(&CircleVtex[21u], 1u),RB_Vec3fGetElem(&CircleVtex[21u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[22u], 0u),RB_Vec3fGetElem(&CircleVtex[22u], 1u),RB_Vec3fGetElem(&CircleVtex[22u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[23u], 0u),RB_Vec3fGetElem(&CircleVtex[23u], 1u),RB_Vec3fGetElem(&CircleVtex[23u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u) \
-	);
-
-	RB_Vec3f EndCircle;
-	RB_Vec3fAdd(&Axis, &Rel, &EndCircle);
-
-	for(uint8_t i = 0u; i < 24u; i++)
-	{
-		RB_Vec3f Offset;
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Norm, &EndCircle, &Offset);
-		RB_Vec3fAdd(&CenterPos, &Offset, &CircleVtex[i]);
-	}
-
-	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
-	fprintf(plt_3d, "set obj 101 polygon from \
-		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"steelblue\" \n", \
-		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[1u], 0u),RB_Vec3fGetElem(&CircleVtex[1u], 1u),RB_Vec3fGetElem(&CircleVtex[1u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[2u], 0u),RB_Vec3fGetElem(&CircleVtex[2u], 1u),RB_Vec3fGetElem(&CircleVtex[2u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[3u], 0u),RB_Vec3fGetElem(&CircleVtex[3u], 1u),RB_Vec3fGetElem(&CircleVtex[3u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[4u], 0u),RB_Vec3fGetElem(&CircleVtex[4u], 1u),RB_Vec3fGetElem(&CircleVtex[4u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[5u], 0u),RB_Vec3fGetElem(&CircleVtex[5u], 1u),RB_Vec3fGetElem(&CircleVtex[5u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[6u], 0u),RB_Vec3fGetElem(&CircleVtex[6u], 1u),RB_Vec3fGetElem(&CircleVtex[6u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[7u], 0u),RB_Vec3fGetElem(&CircleVtex[7u], 1u),RB_Vec3fGetElem(&CircleVtex[7u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[8u], 0u),RB_Vec3fGetElem(&CircleVtex[8u], 1u),RB_Vec3fGetElem(&CircleVtex[8u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[9u], 0u),RB_Vec3fGetElem(&CircleVtex[9u], 1u),RB_Vec3fGetElem(&CircleVtex[9u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[10u], 0u),RB_Vec3fGetElem(&CircleVtex[10u], 1u),RB_Vec3fGetElem(&CircleVtex[10u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[11u], 0u),RB_Vec3fGetElem(&CircleVtex[11u], 1u),RB_Vec3fGetElem(&CircleVtex[11u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[12u], 0u),RB_Vec3fGetElem(&CircleVtex[12u], 1u),RB_Vec3fGetElem(&CircleVtex[12u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[13u], 0u),RB_Vec3fGetElem(&CircleVtex[13u], 1u),RB_Vec3fGetElem(&CircleVtex[13u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[14u], 0u),RB_Vec3fGetElem(&CircleVtex[14u], 1u),RB_Vec3fGetElem(&CircleVtex[14u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[15u], 0u),RB_Vec3fGetElem(&CircleVtex[15u], 1u),RB_Vec3fGetElem(&CircleVtex[15u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[16u], 0u),RB_Vec3fGetElem(&CircleVtex[16u], 1u),RB_Vec3fGetElem(&CircleVtex[16u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[17u], 0u),RB_Vec3fGetElem(&CircleVtex[17u], 1u),RB_Vec3fGetElem(&CircleVtex[17u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[18u], 0u),RB_Vec3fGetElem(&CircleVtex[18u], 1u),RB_Vec3fGetElem(&CircleVtex[18u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[19u], 0u),RB_Vec3fGetElem(&CircleVtex[19u], 1u),RB_Vec3fGetElem(&CircleVtex[19u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[20u], 0u),RB_Vec3fGetElem(&CircleVtex[20u], 1u),RB_Vec3fGetElem(&CircleVtex[20u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[21u], 0u),RB_Vec3fGetElem(&CircleVtex[21u], 1u),RB_Vec3fGetElem(&CircleVtex[21u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[22u], 0u),RB_Vec3fGetElem(&CircleVtex[22u], 1u),RB_Vec3fGetElem(&CircleVtex[22u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[23u], 0u),RB_Vec3fGetElem(&CircleVtex[23u], 1u),RB_Vec3fGetElem(&CircleVtex[23u], 2u), \
-		RB_Vec3fGetElem(&CircleVtex[0u], 0u),RB_Vec3fGetElem(&CircleVtex[0u], 1u),RB_Vec3fGetElem(&CircleVtex[0u], 2u) \
-	);
+	///シリンダーの描画
+	DrawCylinder(start_id, &Axis, &Norm, &Rel, &CenterPos);
 }
 
 
@@ -326,44 +314,69 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 	);
 }
 
-RBSTATIC void DrawBoxObjectSize(uint32_t id, OBJECT_T *Object)
+RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 {
 	uint32_t arrow_num = ( 3 * (id + 100u)) -2;
 
 	RB_Vec3f *v = &Object->CenterPos;
 	RB_Mat3f *m = &Object->CenterRot;
-	BOX_T *Box_obj = &Object->Box;
-	RB_Vec3f *l = &Box_obj->BoxSize;
 
-	fprintf(plt_3d,"set colorsequence default\n");
-	fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
-	arrow_num, \
-	v->e[0],v->e[1],v->e[2],\
-//=====================================
-	(v->e[0u] + l->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
-	(v->e[1u] + l->e[0u] * RB_Mat3fGetElem(m, 1u, 0u)),\
-	(v->e[2u] + l->e[0u] * RB_Mat3fGetElem(m, 2u, 0u))\
-	);//x
-	arrow_num++;
+	uint8_t ShapeType = Object->ShapeType;
 
-	fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\'  \n",\
-	arrow_num, \
-	v->e[0],v->e[1],v->e[2],\
-//=====================================
-	(v->e[0u] + l->e[1u] * RB_Mat3fGetElem(m, 0u, 1u)),\
-	(v->e[1u] + l->e[1u] * RB_Mat3fGetElem(m, 1u, 1u)),\
-	(v->e[2u] + l->e[1u] * RB_Mat3fGetElem(m, 2u, 1u))\
-	);//x
-	arrow_num++;
+	if(ShapeType != 0u)
+	{
+//=================================================暫定の設定========================
+		SSV_T *SSV_obj = &Object->Cylinder;
+		RB_Vec3f *EndPos = &SSV_obj->EndPos;
 
-	fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\'  \n",\
-	arrow_num, \
-	v->e[0],v->e[1],v->e[2],\
-//=====================================
-	(v->e[0u] + l->e[2u] * RB_Mat3fGetElem(m, 0u, 2u)),\
-	(v->e[1u] + l->e[2u] * RB_Mat3fGetElem(m, 1u, 2u)),\
-	(v->e[2u] + l->e[2u] * RB_Mat3fGetElem(m, 2u, 2u))\
-	);//x
+		fprintf(plt_3d,"set colorsequence default\n");
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\' \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+	//=====================================
+		(v->e[0u] + EndPos->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
+		(v->e[1u] + EndPos->e[1u] * RB_Mat3fGetElem(m, 1u, 0u)),\
+		(v->e[2u] + EndPos->e[2u] * RB_Mat3fGetElem(m, 2u, 0u))\
+		);//x
+		arrow_num++;
+		arrow_num++;		
+		fprintf(plt_3d,"set colorsequence classic\n");
+	}
+	else
+	{
+		BOX_T *Box_obj = &Object->Box;
+		RB_Vec3f *l = &Box_obj->BoxSize;
+
+		fprintf(plt_3d,"set colorsequence default\n");
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+	//=====================================
+		(v->e[0u] + l->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
+		(v->e[1u] + l->e[0u] * RB_Mat3fGetElem(m, 1u, 0u)),\
+		(v->e[2u] + l->e[0u] * RB_Mat3fGetElem(m, 2u, 0u))\
+		);//x
+		arrow_num++;
+
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\'  \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+	//=====================================
+		(v->e[0u] + l->e[1u] * RB_Mat3fGetElem(m, 0u, 1u)),\
+		(v->e[1u] + l->e[1u] * RB_Mat3fGetElem(m, 1u, 1u)),\
+		(v->e[2u] + l->e[1u] * RB_Mat3fGetElem(m, 2u, 1u))\
+		);//x
+		arrow_num++;
+
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\'  \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+	//=====================================
+		(v->e[0u] + l->e[2u] * RB_Mat3fGetElem(m, 0u, 2u)),\
+		(v->e[1u] + l->e[2u] * RB_Mat3fGetElem(m, 1u, 2u)),\
+		(v->e[2u] + l->e[2u] * RB_Mat3fGetElem(m, 2u, 2u))\
+		);//x
+	}
 
 	fprintf(plt_3d,"set colorsequence classic\n");
 }
@@ -390,7 +403,7 @@ RBSTATIC void DrawObjectArrow(void)
 
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
-		DrawBoxObjectSize(i, &ObjectData[i]);
+		DrawObjectSizeArrow(i, &ObjectData[i]);
 	}
 
 }
@@ -435,7 +448,7 @@ RBSTATIC void SetConfig(void)
 	fprintf(plt_3d, "FSx=\"F_sphere_x($1,$2)\" \n");
 	fprintf(plt_3d, "FSy=\"F_sphere_y($1,$2)\" \n");
 	fprintf(plt_3d, "FSz=\"F_sphere_z($1,$2)\" \n");
-
+#if 0
 	fprintf(plt_3d, "FCX_x=\"F_cylinderX_x($2)\" \n");
 	fprintf(plt_3d, "FCX_y=\"F_cylinderX_y($1)\" \n");
 	fprintf(plt_3d, "FCX_z=\"F_cylinderX_z($1)\" \n");
@@ -447,6 +460,7 @@ RBSTATIC void SetConfig(void)
 	fprintf(plt_3d, "FCZ_x=\"F_cylinderZ_x($1)\" \n");
 	fprintf(plt_3d, "FCZ_y=\"F_cylinderZ_y($1)\" \n");
 	fprintf(plt_3d, "FCZ_z=\"F_cylinderZ_z($2)\" \n");
+#endif
 }
 
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m)
@@ -555,7 +569,9 @@ void GnuPlot_Cycle(void)
 	DrawCoordinateSys();
 	DrawAreaObject();
 	DrawObjectArrow();
-	DrawCircle();
+
+	DrawTest();
+
 	SplotData();
 
 	//fprintf(plt_3d, "e\n");

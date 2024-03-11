@@ -18,16 +18,6 @@ typedef struct
 
 }DBGCMD_T;
 
-typedef struct
-{
-	uint32_t id;
-	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Cylinder, 3:Capsule
-	bool TFMode;
-	RB_Vec3f C_Pos;
-	RB_Mat3f C_Rot;
-	RB_Vec3f C_AxisLength;
-	uint8_t WidthType; 
-}DATA_T;
 //WidthType
 //0:Center, 1:X軸でy方向に幅, 2:Y軸でx方向に幅, 3:Z軸半径(xy)
 // 4:Y軸半径(xz), 5:X軸半径(yz)
@@ -44,7 +34,6 @@ typedef struct
 {
 	float Radius;
 	RB_Vec3f EndPos;
-	uint8_t AxisType;
 }SSV_T;
 
 typedef struct

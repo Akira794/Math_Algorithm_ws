@@ -322,7 +322,7 @@ RBSTATIC void ConfigSphereObject(POSEDATA_T *Pose, float Radius)
 	f_id++;
 }
 
-RBSTATIC void ConfigCapsuleObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndPos, uint8_t AxisType)
+RBSTATIC void ConfigCapsuleObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndPos)
 {
 	SSV_T capsule_obj = { 0 };
 
@@ -332,13 +332,12 @@ RBSTATIC void ConfigCapsuleObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndP
 	capsule_obj.Radius = Radius;
 
 	capsule_obj.EndPos = *EndPos;
-	capsule_obj.AxisType = AxisType;
 
 	f_ObjectData[f_id].Capsule = capsule_obj;
 	f_id++;
 }
 
-RBSTATIC void ConfigCylinderObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndPos, uint8_t AxisType)
+RBSTATIC void ConfigCylinderObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndPos)
 {
 	SSV_T cylinder_obj = { 0 };
 
@@ -348,7 +347,6 @@ RBSTATIC void ConfigCylinderObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *End
 	cylinder_obj.Radius = Radius;
 
 	cylinder_obj.EndPos = *EndPos;
-	cylinder_obj.AxisType = AxisType;
 
 	f_ObjectData[f_id].Cylinder = cylinder_obj;
 	f_id++;
@@ -387,15 +385,9 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//シリンダー
 	ConfigPose(0.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3f Rel;
-	RB_Vec3fCreate(0.0f, 500.0f, 200.0f, &Rel);
-	ConfigCylinderObject(&Pose, 200.0f, &Rel, 0u);
-#if 0
-	//カプセル
-	ConfigPose(-300.0f, -400.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3f Rel;
-	RB_Vec3fCreate(500.0f, 0.0f, 0.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 100.0f, &Rel, 0u);
-#endif
+	RB_Vec3fCreate(0.0f, 500.0f, 100.0f, &Rel);
+	ConfigCylinderObject(&Pose, 200.0f, &Rel);
+
 #if 0
 
 	//暫定・カプセル
