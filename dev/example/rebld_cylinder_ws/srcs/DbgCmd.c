@@ -385,9 +385,14 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//シリンダー
 	ConfigPose(0.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3f Rel;
-	RB_Vec3fCreate(0.0f, 500.0f, 100.0f, &Rel);
+	RB_Vec3fCreate(0.0f, 500.0f, 300.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
+	//カプセル
+	ConfigPose(300.0f, 200.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(500.0f, 0.0f, 300.0f, &Rel);
+//	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
+	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 #if 0
 
 	//暫定・カプセル
@@ -410,61 +415,6 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(250.0f, 250.0f, 250.0f, &(ObjectBox[9u].ObjectSize));
 	ObjectBox[9u].ShapeType = 1u;
 #endif
-
-}
-
-//Object設定のテスト
-RBSTATIC void DbgCmdTestParam(void)
-{
-	//暫定 Box設定
-	typedef struct
-	{
-		uint8_t ShapeType;
-		RB_Vec3f ObjectPos;
-		RB_Vec3f ObjectSize;
-		uint8_t WidthType;
-	}BoxInit_T;
-
-	BoxInit_T ObjectBox[OBJECT_MAXID] = { 0.0f };
-#if 1
-	RB_Vec3fCreate(300.0f, -200.0f, 100.0f, &(ObjectBox[1u].ObjectPos));
-	RB_Vec3fCreate(100.0f, -100.0f, 100.0f, &(ObjectBox[1u].ObjectSize));
-
-	RB_Vec3fCreate(-300.0f, -200.0f, 0.0f, &(ObjectBox[2u].ObjectPos));
-	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &(ObjectBox[2u].ObjectSize));
-	ObjectBox[2u].WidthType = 1u;
-
-	RB_Vec3fCreate(-500.0f, -500.0f, 0.0f, &(ObjectBox[3u].ObjectPos));
-	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &(ObjectBox[3u].ObjectSize));
-	ObjectBox[3u].WidthType = 2u;
-
-	RB_Vec3fCreate(800.0f, -600.0f, 0.0f, &(ObjectBox[4u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &(ObjectBox[4u].ObjectSize));
-	ObjectBox[4u].WidthType = 3u;
-
-	RB_Vec3fCreate(0.0f, -900.0f, 1000.0f, &(ObjectBox[5u].ObjectPos));
-	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &(ObjectBox[5u].ObjectSize));
-	ObjectBox[5u].WidthType = 5u;
-#endif
-	//暫定・カプセル
-	RB_Vec3fCreate(-300.0f, -300.0f, 500.0f, &(ObjectBox[6u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 100.0f, 500.0f, &(ObjectBox[6u].ObjectSize));
-	ObjectBox[6u].ShapeType = 3u;
-	ObjectBox[6u].WidthType = 3u;
-
-	RB_Vec3fCreate(300.0f, -500.0f, 500.0f, &(ObjectBox[7u].ObjectPos));
-	RB_Vec3fCreate(100.0f, 500.0f, 100.0f, &(ObjectBox[7u].ObjectSize));
-	ObjectBox[7u].ShapeType = 3u;
-	ObjectBox[7u].WidthType = 4u;
-
-	RB_Vec3fCreate(300.0f, 500.0f, 500.0f, &(ObjectBox[8u].ObjectPos));
-	RB_Vec3fCreate(500.0f, 100.0f, 100.0f, &(ObjectBox[8u].ObjectSize));
-	ObjectBox[8u].ShapeType = 3u;
-	ObjectBox[8u].WidthType = 5u;
-	//暫定 球体
-	RB_Vec3fCreate(-300.0f, 400.0f, 250.0f, &(ObjectBox[9u].ObjectPos));
-	RB_Vec3fCreate(250.0f, 250.0f, 250.0f, &(ObjectBox[9u].ObjectSize));
-	ObjectBox[9u].ShapeType = 1u;
 
 }
 

@@ -46,7 +46,7 @@ RBSTATIC void DrawGround(float z)
 	);
 }
 
-RBSTATIC void DrawCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
+RBSTATIC void CreateCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
 {
 	uint8_t k = (j == 23u) ? 0u : (j + 1u);
 
@@ -63,7 +63,7 @@ RBSTATIC void DrawCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_
 	);
 }
 
-RBSTATIC void DrawCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
+RBSTATIC void CreateCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
 {
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from \
@@ -103,7 +103,7 @@ RBSTATIC void DrawCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *C
 	);
 }
 
-RBSTATIC void DrawCylinder(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos)
+RBSTATIC void CreateCylinderStruct(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos)
 {
 	float objectsolid_val = 0.5;
 	RB_Vec3f CircleVtexTop[24u] = { 0.0f };
@@ -123,34 +123,35 @@ RBSTATIC void DrawCylinder(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f 
 	}
 
 	//円柱の底面・上面
-	DrawCylinderSurface(id, objectsolid_val, CircleVtexBottom, "#0918e6");
+	CreateCylinderSurface(id, objectsolid_val, CircleVtexBottom, "#0918e6");
 	id++;
-	DrawCylinderSurface(id, objectsolid_val, CircleVtexTop, "steelblue");
+	CreateCylinderSurface(id, objectsolid_val, CircleVtexTop, "steelblue");
 
 	//円柱側面
 	for(uint8_t i = 0u; i < 24; i++)
 	{
 		id++;
-		DrawCylinderSide(id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
+		CreateCylinderSide(id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
 	}
 }
 
-RBSTATIC void DrawTest(void)
+RBSTATIC void DrawCylinder(uint32_t id)
 {
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t object_num = (26u * (id + 1u)) - 25u;
+
+	float Radius;
+	RB_Vec3f EndPos;
 
 	///Cylinderを作成
-	RB_Vec3f CenterPos = ObjectData[6u].CenterPos;
-	RB_Mat3f CenterRot = ObjectData[6u].CenterRot;
+	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
+	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
+	SSV_T Cylinder = ObjectData[id].Cylinder;
+	Radius = Cylinder.Radius;
+	EndPos = Cylinder.EndPos;
 
-	SSV_T Cylinder = ObjectData[6u].Cylinder;
-	float Radius = Cylinder.Radius;
-	RB_Vec3f EndPos = Cylinder.EndPos;
-
-	uint8_t start_id = 100u;
-	
 	RB_Vec3f Rel, Norm, Vertical, Axis;
 	RB_MulMatVec3f(&CenterRot, &EndPos, &Axis);
 
@@ -159,7 +160,7 @@ RBSTATIC void DrawTest(void)
 	RB_Vec3fNormalize(&Axis, &Norm);
 
 	///シリンダーの描画
-	DrawCylinder(start_id, &Axis, &Norm, &Rel, &CenterPos);
+	CreateCylinderStruct(object_num, &Axis, &Norm, &Rel, &CenterPos);
 }
 
 
@@ -185,7 +186,7 @@ RBSTATIC void GenerateSphereDat(void)
 RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
 {
 	BOX_T *Box_obj = &Object->Box;
-	uint32_t object_num = (6 * (id + 1u)) - 5;
+	uint32_t object_num = (6u * (id + 1u)) - 5u;
 	RB_Vec3f BoxInitArray[8u] = { 0.0f };
 	RB_Vec3f BoxVertex[8u] = { 0.0f };
 	RB_Vec3f width3f;
@@ -316,33 +317,14 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 
 RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 {
-	uint32_t arrow_num = ( 3 * (id + 100u)) -2;
+	uint32_t arrow_num = ( 3u * (id + 100u)) -2u;
 
 	RB_Vec3f *v = &Object->CenterPos;
 	RB_Mat3f *m = &Object->CenterRot;
 
 	uint8_t ShapeType = Object->ShapeType;
 
-	if(ShapeType != 0u)
-	{
-//=================================================暫定の設定========================
-		SSV_T *SSV_obj = &Object->Cylinder;
-		RB_Vec3f *EndPos = &SSV_obj->EndPos;
-
-		fprintf(plt_3d,"set colorsequence default\n");
-		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\' \n",\
-		arrow_num, \
-		v->e[0],v->e[1],v->e[2],\
-	//=====================================
-		(v->e[0u] + EndPos->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
-		(v->e[1u] + EndPos->e[1u] * RB_Mat3fGetElem(m, 1u, 0u)),\
-		(v->e[2u] + EndPos->e[2u] * RB_Mat3fGetElem(m, 2u, 0u))\
-		);//x
-		arrow_num++;
-		arrow_num++;		
-		fprintf(plt_3d,"set colorsequence classic\n");
-	}
-	else
+	if(ShapeType == 0u)
 	{
 		BOX_T *Box_obj = &Object->Box;
 		RB_Vec3f *l = &Box_obj->BoxSize;
@@ -355,7 +337,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 		(v->e[0u] + l->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
 		(v->e[1u] + l->e[0u] * RB_Mat3fGetElem(m, 1u, 0u)),\
 		(v->e[2u] + l->e[0u] * RB_Mat3fGetElem(m, 2u, 0u))\
-		);//x
+		);
 		arrow_num++;
 
 		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\'  \n",\
@@ -365,7 +347,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 		(v->e[0u] + l->e[1u] * RB_Mat3fGetElem(m, 0u, 1u)),\
 		(v->e[1u] + l->e[1u] * RB_Mat3fGetElem(m, 1u, 1u)),\
 		(v->e[2u] + l->e[1u] * RB_Mat3fGetElem(m, 2u, 1u))\
-		);//x
+		);
 		arrow_num++;
 
 		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\'  \n",\
@@ -375,10 +357,60 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 		(v->e[0u] + l->e[2u] * RB_Mat3fGetElem(m, 0u, 2u)),\
 		(v->e[1u] + l->e[2u] * RB_Mat3fGetElem(m, 1u, 2u)),\
 		(v->e[2u] + l->e[2u] * RB_Mat3fGetElem(m, 2u, 2u))\
-		);//x
+		);	
+		fprintf(plt_3d,"set colorsequence classic\n");
 	}
+	else
+	{
+		SSV_T *SSV_obj;
+		switch(ShapeType)
+		{
+			case 2u:
+				SSV_obj = &Object->Capsule;
+				break;
 
-	fprintf(plt_3d,"set colorsequence classic\n");
+			case 3u:
+				SSV_obj = &Object->Cylinder;
+				break;
+
+			default:
+				SSV_obj = &Object->Sphere;
+				break;
+		}
+		RB_Vec3f *EndPos = &SSV_obj->EndPos;
+		float Radius = SSV_obj->Radius;
+
+		RB_Vec3f RotVec, ArrowVec, Vertical, RadiusArrow;
+		RB_MulMatVec3f(m, EndPos, &RotVec);
+		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
+
+		fprintf(plt_3d,"set colorsequence default\n");
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\' \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+			(ArrowVec.e[0]),\
+			(ArrowVec.e[1]),\
+			(ArrowVec.e[2])\
+		);//x
+
+		arrow_num++;
+		RB_CalcVerticalVec3f(EndPos, &Vertical);
+		RB_Vec3fCreate(((Radius)*(Vertical.e[0])), ((Radius)*(Vertical.e[1])), ((Radius)*(Vertical.e[2])), &RadiusArrow);
+		RB_MulMatVec3f(m, &RadiusArrow, &RotVec);
+		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
+
+		fprintf(plt_3d,"set colorsequence default\n");
+		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\' \n",\
+		arrow_num, \
+		v->e[0],v->e[1],v->e[2],\
+	//=====================================
+			(ArrowVec.e[0]),\
+			(ArrowVec.e[1]),\
+			(ArrowVec.e[2])\
+		);//x
+		arrow_num++;		
+		fprintf(plt_3d,"set colorsequence classic\n");
+	}
 }
 
 RBSTATIC void DrawAreaObject(void)
@@ -570,7 +602,8 @@ void GnuPlot_Cycle(void)
 	DrawAreaObject();
 	DrawObjectArrow();
 
-	DrawTest();
+	DrawCylinder(6u);
+	DrawCylinder(7u);
 
 	SplotData();
 
