@@ -357,7 +357,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	POSEDATA_T Pose = { 0 };
 
 	RB_Vec3f BoxSize;
-
+	RB_Vec3f Rel;
+	
 	ConfigPose(300.0f, -200.0f, 100.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
@@ -377,21 +378,25 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(0.0f, -900.0f, 1000.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 5u);
-#if 0
-	//暫定 球体
-	ConfigPose(-300.0f, 400.0f, 500.0f, 0u, 0.0f, &Pose);
-	ConfigSphereObject(&Pose, 250.0f);
-#endif
+
 	//シリンダー
 	ConfigPose(0.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
-	RB_Vec3f Rel;
-	RB_Vec3fCreate(0.0f, 500.0f, 300.0f, &Rel);
+	RB_Vec3fCreate(200.0f, 500.0f, 300.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
+	//シリンダー
+	ConfigPose(-300.0f, -200.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(-100.0f, -300.0f, 300.0f, &Rel);
+	ConfigCylinderObject(&Pose, 100.0f, &Rel);
+
+	//シリンダー
+	ConfigPose(200.0f, -400.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 0.0f, 300.0f, &Rel);
+	ConfigCylinderObject(&Pose, 50.0f, &Rel);
+
 	//カプセル
-	ConfigPose(300.0f, 200.0f, 500.0f, 0u, 0.0f, &Pose);
+	ConfigPose(-300.0f, 200.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(500.0f, 0.0f, 300.0f, &Rel);
-//	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 #if 0
 
@@ -422,7 +427,7 @@ void DbgCmd_Init(void)
 {
 	KB_open();
 
-	for(uint8_t i = 0; i < (uint32_t)OBJECT_MAXID; i++)
+	for(uint32_t i = 0; i < (uint32_t)OBJECT_MAXID; i++)
 	{
 		f_ObjectData[i].CenterRot = f_RB_Mat3fident;
 	}

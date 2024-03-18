@@ -8,13 +8,24 @@ RBSTATIC FILE *plt_3d;
 RBSTATIC int32_t f_plot_width = 1000;
 RBSTATIC RBCONST RB_Vec3f f_RB_Vec3fzero = { { 0.0f, 0.0f, 0.0f} };
 RBSTATIC RBCONST RB_Mat3f f_RB_Mat3fident = { { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } } };
+RBSTATIC uint32_t f_ObjectStartId[OBJECT_MAXID] = { 0u };
 
+RBSTATIC void ReservationObjectId(void);
 RBSTATIC void DrawGround(float z);
+
+RBSTATIC void CreateSphere(void);
+RBSTATIC void DrawSphere(void);
+
+RBSTATIC void CreateCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop);
+RBSTATIC void CreateCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str);
+RBSTATIC void CreateCylinderStruct(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos);
+RBSTATIC void DrawCylinder(uint32_t id);
+
 RBSTATIC void GenerateSphereDat(void);
 
-RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object);
+RBSTATIC void DrawBox(uint32_t id);
 RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object);
-RBSTATIC void DrawObject(void);
+RBSTATIC void DrawObject3d(void);
 
 RBSTATIC void UnsetConfig(void);
 RBSTATIC void SetConfig(void);
@@ -23,6 +34,49 @@ RBSTATIC void SplotData(void);
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m);
 RBSTATIC void DrawWorldCoordinateSys(void);
 RBSTATIC void DrawCoordinateSys(void);
+
+
+RBSTATIC void ReservationObjectId(void)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t id = 2u;
+	uint32_t add_id = 0u;
+	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
+	{
+		uint8_t ShapeType = ObjectData[i].ShapeType;
+		//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder
+		id += add_id;
+		switch(ShapeType)
+		{
+			case 1u:
+				add_id = 0u;
+				printf("Sphere:\t");
+				break;
+
+			case 2u:
+				add_id = 24u;
+				printf("Capsule:\t");
+				break;
+
+			case 3u:
+				add_id = 26u;
+				printf("Cylinder:\t");
+				break;
+
+			default:
+				add_id = 6u;
+				printf("Box:\t");
+				break;
+		}
+		f_ObjectStartId[i] = id;
+	}
+	printf("\n");
+	for(uint32_t n = 1u; n < (uint32_t)OBJECT_MAXID; n++)
+	{
+			printf("Id:%u >> startId: %u\n", n, f_ObjectStartId[n]);
+	}
+}
 
 RBSTATIC void DrawGround(float z)
 {
@@ -140,7 +194,7 @@ RBSTATIC void DrawCylinder(uint32_t id)
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
-	uint32_t object_num = (26u * (id + 1u)) - 25u;
+	uint32_t object_id = f_ObjectStartId[id];
 
 	float Radius;
 	RB_Vec3f EndPos;
@@ -160,7 +214,7 @@ RBSTATIC void DrawCylinder(uint32_t id)
 	RB_Vec3fNormalize(&Axis, &Norm);
 
 	///シリンダーの描画
-	CreateCylinderStruct(object_num, &Axis, &Norm, &Rel, &CenterPos);
+	CreateCylinderStruct(object_id, &Axis, &Norm, &Rel, &CenterPos);
 }
 
 
@@ -183,48 +237,51 @@ RBSTATIC void GenerateSphereDat(void)
 	fprintf(plt_3d, "unset yrange \n");
 }
 
-RBSTATIC void DrawBox(uint32_t id, OBJECT_T *Object)
+RBSTATIC void DrawBox(uint32_t id)
 {
-	BOX_T *Box_obj = &Object->Box;
-	uint32_t object_num = (6u * (id + 1u)) - 5u;
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	BOX_T Box_obj = ObjectData[id].Box;
+	uint32_t object_id = f_ObjectStartId[id];
 	RB_Vec3f BoxInitArray[8u] = { 0.0f };
 	RB_Vec3f BoxVertex[8u] = { 0.0f };
 	RB_Vec3f width3f;
 
-	float lx = RB_Vec3fGetElem(&(Box_obj->BoxSize), 0u);
-	float ly = RB_Vec3fGetElem(&(Box_obj->BoxSize), 1u);
-	float lz = RB_Vec3fGetElem(&(Box_obj->BoxSize), 2u);
+	float lx = RB_Vec3fGetElem(&(Box_obj.BoxSize), 0u);
+	float ly = RB_Vec3fGetElem(&(Box_obj.BoxSize), 1u);
+	float lz = RB_Vec3fGetElem(&(Box_obj.BoxSize), 2u);
 
-switch(Box_obj->CenterType)
-{
-	case 1:
-		RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);//X軸でy方向に幅
-		break;
+	switch(Box_obj.CenterType)
+	{
+		case 1:
+			RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &width3f);//X軸でy方向に幅
+			break;
 
-	case 2:
-		RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &width3f);//Y軸でx方向に幅
-		break;
+		case 2:
+			RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &width3f);//Y軸でx方向に幅
+			break;
 
-	case 3:
-		RB_Vec3fCreate( 1.0f, 1.0f, 0.0f, &width3f);//Z軸でxy方向に幅(半径)
-		break;
+		case 3:
+			RB_Vec3fCreate( 1.0f, 1.0f, 0.0f, &width3f);//Z軸でxy方向に幅(半径)
+			break;
 
-	case 4:
-		RB_Vec3fCreate( 1.0f, 0.0f, 1.0f, &width3f);//Y軸でxz方向に幅(半径)
-		break;
+		case 4:
+			RB_Vec3fCreate( 1.0f, 0.0f, 1.0f, &width3f);//Y軸でxz方向に幅(半径)
+			break;
 
-	case 5:
-		RB_Vec3fCreate( 0.0f, 1.0f, 1.0f, &width3f);//X軸でyz方向に幅(半径)
-		break;
+		case 5:
+			RB_Vec3fCreate( 0.0f, 1.0f, 1.0f, &width3f);//X軸でyz方向に幅(半径)
+			break;
 
-	default:
-		RB_Vec3fCreate( 1.0f, 1.0f, 1.0f, &width3f);//重心からxyz方向に幅(半径、サイズ)
-		break;
-}
+		default:
+			RB_Vec3fCreate( 1.0f, 1.0f, 1.0f, &width3f);//重心からxyz方向に幅(半径、サイズ)
+			break;
+	}
 
-float wh_x = RB_Vec3fGetElem(&width3f, 0u) * (-lx);
-float wh_y = RB_Vec3fGetElem(&width3f, 1u) * (-ly);
-float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
+	float wh_x = RB_Vec3fGetElem(&width3f, 0u) * (-lx);
+	float wh_y = RB_Vec3fGetElem(&width3f, 1u) * (-ly);
+	float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 
 	RB_Vec3fCreate( wh_x, wh_y, wh_z, &(BoxInitArray[0u]));//A0
 	RB_Vec3fCreate( wh_x,   ly, wh_z, &(BoxInitArray[1u]));//B1
@@ -239,8 +296,8 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 	for(uint8_t i = 0u; i < 8u; i++)
 	{
 		RB_Vec3f RotVec;
-		RB_MulMatVec3f(&Object->CenterRot, &BoxInitArray[i], &RotVec);
-		RB_Vec3fAdd(&Object->CenterPos, &RotVec, &BoxVertex[i]);
+		RB_MulMatVec3f(&ObjectData[id].CenterRot, &BoxInitArray[i], &RotVec);
+		RB_Vec3fAdd(&ObjectData[id].CenterPos, &RotVec, &BoxVertex[i]);
 	}
 
 	//描画する
@@ -249,64 +306,64 @@ float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#0918e6\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u)  \
 	);
-	object_num++;
+	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#33AAAA\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u)  \
 	);
-	object_num++;
+	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#33AAAA\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u)  \
 	);
-	object_num++;
+	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#33AAAA\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u)  \
 	);
-	object_num++;
+	object_id++;
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#33AAAA\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u)  \
 	);
-	object_num++;
+	object_id++;
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#33AAAA\" \n", \
-		object_num, \
+		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
@@ -413,16 +470,28 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 	}
 }
 
-RBSTATIC void DrawAreaObject(void)
+RBSTATIC void DrawObject3d(void)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
-		if((ObjectData[i].ShapeType == 0))
+		switch((ObjectData[i].ShapeType))
 		{
-			DrawBox(i, &ObjectData[i]);
+			case 1u:
+				break;
+
+			case 2u:
+				break;
+
+			case 3u:
+				DrawCylinder(i);
+				break;
+
+			default:
+				DrawBox(i);
+				break;
 		}
 	}
 
@@ -480,19 +549,6 @@ RBSTATIC void SetConfig(void)
 	fprintf(plt_3d, "FSx=\"F_sphere_x($1,$2)\" \n");
 	fprintf(plt_3d, "FSy=\"F_sphere_y($1,$2)\" \n");
 	fprintf(plt_3d, "FSz=\"F_sphere_z($1,$2)\" \n");
-#if 0
-	fprintf(plt_3d, "FCX_x=\"F_cylinderX_x($2)\" \n");
-	fprintf(plt_3d, "FCX_y=\"F_cylinderX_y($1)\" \n");
-	fprintf(plt_3d, "FCX_z=\"F_cylinderX_z($1)\" \n");
-
-	fprintf(plt_3d, "FCY_x=\"F_cylinderY_x($1)\" \n");
-	fprintf(plt_3d, "FCY_y=\"F_cylinderY_y($2)\" \n");
-	fprintf(plt_3d, "FCY_z=\"F_cylinderY_z($1)\" \n");
-
-	fprintf(plt_3d, "FCZ_x=\"F_cylinderZ_x($1)\" \n");
-	fprintf(plt_3d, "FCZ_y=\"F_cylinderZ_y($1)\" \n");
-	fprintf(plt_3d, "FCZ_z=\"F_cylinderZ_z($2)\" \n");
-#endif
 }
 
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m)
@@ -593,17 +649,15 @@ void GnuPlot_PreStartProc(void)
 	UnsetConfig();
 	SetConfig();
 	DrawGround(0.0f);
+	ReservationObjectId();
 }
 
 void GnuPlot_Cycle(void)
 {
 //コマンドで変化するものたち
 	DrawCoordinateSys();
-	DrawAreaObject();
+	DrawObject3d();
 	DrawObjectArrow();
-
-	DrawCylinder(6u);
-	DrawCylinder(7u);
 
 	SplotData();
 
