@@ -394,7 +394,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(100.0f, 0.0f, 300.0f, &Rel);
 	ConfigCylinderObject(&Pose, 50.0f, &Rel);
 
-	//カプセル
+	//シリンダー
 	ConfigPose(-300.0f, 200.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(500.0f, 0.0f, 300.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
@@ -421,6 +421,12 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ObjectBox[9u].ShapeType = 1u;
 #endif
 
+	for(uint32_t id = 0; id < (uint32_t)OBJECT_MAXID; id++)
+	{
+		f_SavePose[id].S_Pos = f_ObjectData[id].CenterPos;
+		f_SavePose[id].S_Rot = f_ObjectData[id].CenterRot;
+		f_SavePose[id].S_RPY = f_RPY[id];
+	}
 }
 
 void DbgCmd_Init(void)
