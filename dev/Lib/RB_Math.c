@@ -278,12 +278,16 @@ void RB_VecRotateVec3f(float rad, RBCONST RB_Vec3f *norm, RBCONST RB_Vec3f *rel,
 	RB_Vec3f Cross_NormRelVec;
 	RB_Vec3fCross(norm, rel, &Cross_NormRelVec);
 
+	for(uint8_t i = 0u; i < 3u; i++)
+	{
+		v_ans->e[i] = (CosDeriv * Dot_NormRelVec) * (norm->e[i]) + Cosq * (rel->e[i]) + Sinq * (Cross_NormRelVec.e[i]);		
+	}
+/*
 	v_ans->e[0] = (CosDeriv * Dot_NormRelVec) * (norm->e[0]) + Cosq * (rel->e[0]) + Sinq * (Cross_NormRelVec.e[0]);
 	v_ans->e[1] = (CosDeriv * Dot_NormRelVec) * (norm->e[1]) + Cosq * (rel->e[1]) + Sinq * (Cross_NormRelVec.e[1]);
 	v_ans->e[2] = (CosDeriv * Dot_NormRelVec) * (norm->e[2]) + Cosq * (rel->e[2]) + Sinq * (Cross_NormRelVec.e[2]);
-
+*/
 }
-
 
 void RB_Mat3fTermOut(RBCONST char *str, RBCONST RB_Mat3f *m)
 {
