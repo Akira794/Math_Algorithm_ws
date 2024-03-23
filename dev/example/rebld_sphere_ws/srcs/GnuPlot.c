@@ -17,9 +17,9 @@ RBSTATIC void DrawGround(float z);
 RBSTATIC void DrawSphere(uint32_t id);
 
 //CylinderStruct build
-RBSTATIC void CreateCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop);
-RBSTATIC void CreateCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str);
-RBSTATIC void CreateCylinderStruct(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos);
+RBSTATIC void CreateCylinderSide(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop);
+RBSTATIC void CreateCylinderSurface(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str);
+RBSTATIC void CreateCylinderStruct(uint32_t id, float radius, RB_Vec3f *endpos, RB_Mat3f *rot, RB_Vec3f *pos);
 RBSTATIC void DrawCylinder(uint32_t id);
 
 RBSTATIC void GenerateSphereDat(void);
@@ -53,12 +53,12 @@ RBSTATIC void ReservationObjectId(void)
 		switch(ShapeType)
 		{
 			case 1u:
-				add_id = 0u;
+				add_id = 288u;
 				printf("Sphere:\t");
 				break;
 
 			case 2u:
-				add_id = 24u;
+				add_id = 312u;
 				printf("Capsule:\t");
 				break;
 
@@ -81,6 +81,7 @@ RBSTATIC void ReservationObjectId(void)
 	}
 }
 
+//地面をpolygonで作成
 RBSTATIC void DrawGround(float z)
 {
 	//描画する
@@ -103,9 +104,73 @@ RBSTATIC void DrawGround(float z)
 	);
 }
 
-RBSTATIC void CreateCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
+RBSTATIC void CreateSphereStruct(uint32_t id, float objectsolid_val, float radius, RB_Mat3f *rot, RB_Vec3f *pos)
 {
-	uint8_t k = (j == 23u) ? 0u : (j + 1u);
+	RB_Vec3f x_norm, z_norm, x_axis, z_axis, Axis, Rel;
+
+	RB_Vec3fCreate( 0.0f, 0.0f, 1.0f, &z_norm);
+	RB_CalcVerticalVec3f(&z_norm, &x_norm);
+	RB_Vec3fCreate(0.0f, 0.0f, radius, &Axis);
+
+//姿勢を反映
+	RB_MulMatVec3f(rot, &x_norm, &x_axis);
+	RB_MulMatVec3f(rot, &z_norm, &z_axis);
+	RB_MulMatVec3f(rot, &Axis, &Rel);
+
+	RB_Vec3f SphereVtex[14u][28u] = { 0.0f };
+	uint32_t object_id = id;
+
+	for(uint32_t i = 0u; i < 14u; i++)
+	{
+		RB_Vec3f Vertical, Offset;
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &x_axis, &Rel, &Vertical);
+		for(uint32_t j = 0u; j < 28u; j++)
+		{
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &z_axis, &Vertical, &Offset);
+			RB_Vec3fAdd(pos, &Offset, &SphereVtex[i][j]);
+		}
+	}
+
+	for(uint32_t i = 0u; i < 12u; i++)
+	{
+		for(uint32_t j = 0u; j < 24u; j++)
+		{
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&SphereVtex[i][j], 0u),RB_Vec3fGetElem(&SphereVtex[i][j], 1u),RB_Vec3fGetElem(&SphereVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 0u),RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 1u),RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 2u), \
+				RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 0u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 1u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 2u), \
+				RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 0u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 1u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 2u), \
+				RB_Vec3fGetElem(&SphereVtex[i][j], 0u),RB_Vec3fGetElem(&SphereVtex[i][j], 1u),RB_Vec3fGetElem(&SphereVtex[i][j], 2u)  \
+			);
+			object_id++;
+		}
+	}
+}
+
+RBSTATIC void DrawSphere(uint32_t id)
+{
+	float objectsolid_val = 0.3f;
+
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t object_id = f_ObjectStartId[id];
+	
+	///Sphereを作成
+	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
+	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
+	SSV_T Sphere = ObjectData[id].Sphere;
+	float Radius = Sphere.Radius;
+
+	CreateSphereStruct(object_id, objectsolid_val, Radius, &CenterRot, &CenterPos);
+}
+
+//Cylinderの側面を長方形で描画
+RBSTATIC void CreateCylinderSide(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
+{
+	uint32_t k = (j == 23u) ? 0u : (j + 1u);
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from \
@@ -120,7 +185,8 @@ RBSTATIC void CreateCylinderSide(uint8_t id, float objectsolid_val, uint8_t j, R
 	);
 }
 
-RBSTATIC void CreateCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
+//Cylinderの底面と上面を円(正24角形)で描画
+RBSTATIC void CreateCylinderSurface(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
 {
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from \
@@ -160,95 +226,44 @@ RBSTATIC void CreateCylinderSurface(uint8_t id, float objectsolid_val, RB_Vec3f 
 	);
 }
 
-RBSTATIC void CreateSphereStruct(uint8_t id, float Radius, RB_Vec3f *pos)
+RBSTATIC void CreateCylinderStruct(uint32_t id, float radius, RB_Vec3f *endpos, RB_Mat3f *rot, RB_Vec3f *pos)
 {
-	float objectsolid_val = 0.5;
-	RB_Vec3f SphereVtex[7u][28u] = { 0.0f };
-	RB_Vec3f x_axis, y_axis, z_axis, Rel;
-	RB_Vec3fCreate( 1.0f, 0.0f, 0.0f, &x_axis);
-	RB_Vec3fCreate( 0.0f, 1.0f, 0.0f, &y_axis);
-	RB_Vec3fCreate( 0.0f, 0.0f, 1.0f, &z_axis);
-
-	/// 半円、あとは円と姿勢の反映
-	RB_Vec3fCreate(0.0f, 0.0f, -(Radius), &Rel);
-	for(uint8_t i = 0u; i < 7u; i++)
-	{
-		RB_Vec3f Vertical, Offset;
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &x_axis, &Rel, &Vertical);
-		for(uint8_t j = 0u; j < 28u; j++)
-		{
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &z_axis, &Vertical, &Offset);
-			RB_Vec3fAdd(pos, &Offset, &SphereVtex[i][j]);
-		}
-	}
-	uint32_t object_id = 1000u;
-	for(uint8_t i = 0u; i < 6u; i++)
-	{
-		for(uint8_t j = 0u; j < 24u; j++)
-		{
-			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.5f);
-			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-				depthorder fillcolor \"steelblue\" \n", \
-				object_id, \
-				RB_Vec3fGetElem(&SphereVtex[i][j], 0u),RB_Vec3fGetElem(&SphereVtex[i][j], 1u),RB_Vec3fGetElem(&SphereVtex[i][j], 2u), \
-				RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 0u),RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 1u),RB_Vec3fGetElem(&SphereVtex[i][j + 1u], 2u), \
-				RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 0u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 1u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j + 1u], 2u), \
-				RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 0u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 1u),RB_Vec3fGetElem(&SphereVtex[i + 1u][j], 2u), \
-				RB_Vec3fGetElem(&SphereVtex[i][j], 0u),RB_Vec3fGetElem(&SphereVtex[i][j], 1u),RB_Vec3fGetElem(&SphereVtex[i][j], 2u)  \
-			);
-			object_id++;
-		}
-	}
-	object_id = 1000u;
-}
-
-RBSTATIC void DrawSphere(uint32_t id)
-{
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-	uint32_t object_id = f_ObjectStartId[id];
-	float Radius;
-
-	///Sphereを作成
-	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
-	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
-	SSV_T Sphere = ObjectData[id].Sphere;
-	Radius = Sphere.Radius;
-
 	RB_Vec3f Rel, Norm, Vertical, Axis;
 
-}
-
-
-RBSTATIC void CreateCylinderStruct(uint8_t id, RB_Vec3f *axis, RB_Vec3f *norm, RB_Vec3f *rel, RB_Vec3f *pos)
-{
-	float objectsolid_val = 0.5;
+	float objectsolid_val = 0.3;
 	RB_Vec3f CircleVtexTop[24u] = { 0.0f };
 	RB_Vec3f CircleVtexBottom[24u] = { 0.0f };
 	RB_Vec3f EndCircle;
+	uint32_t object_id = id;
 
-	RB_Vec3fAdd(axis, rel, &EndCircle);
+	RB_MulMatVec3f(rot, endpos, &Axis);
+	RB_CalcVerticalVec3f(&Axis, &Vertical);
+	RB_Vec3fCreate(((radius)*(Vertical.e[0])), ((radius)*(Vertical.e[1])), ((radius)*(Vertical.e[2])), &Rel);
+	RB_Vec3fNormalize(&Axis, &Norm);
 
-	for(uint8_t i = 0u; i < 24u; i++)
+	RB_Vec3fAdd(&Axis, &Rel, &EndCircle);
+
+	for(uint32_t i = 0u; i < 24u; i++)
 	{
 		RB_Vec3f BottomOffset;
 		RB_Vec3f TopOffset;
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), norm, rel, &BottomOffset);
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Norm, &Rel, &BottomOffset);
 		RB_Vec3fAdd(pos, &BottomOffset, &CircleVtexBottom[i]);
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), norm, &EndCircle, &TopOffset);
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Norm, &EndCircle, &TopOffset);
 		RB_Vec3fAdd(pos, &TopOffset, &CircleVtexTop[i]);
 	}
 
 	//円柱の底面・上面
-	CreateCylinderSurface(id, objectsolid_val, CircleVtexBottom, "#0918e6");
-	id++;
-	CreateCylinderSurface(id, objectsolid_val, CircleVtexTop, "steelblue");
+	CreateCylinderSurface(object_id, objectsolid_val, CircleVtexBottom, "#0918e6");
+	object_id++;
+	CreateCylinderSurface(object_id, objectsolid_val, CircleVtexTop, "green");
+	object_id++;
 
 	//円柱側面
-	for(uint8_t i = 0u; i < 24; i++)
+	for(uint32_t i = 0u; i < 24; i++)
 	{
-		id++;
-		CreateCylinderSide(id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
+		CreateCylinderSide(object_id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
+		object_id++;
 	}
 }
 
@@ -269,35 +284,7 @@ RBSTATIC void DrawCylinder(uint32_t id)
 	Radius = Cylinder.Radius;
 	EndPos = Cylinder.EndPos;
 
-	RB_Vec3f Rel, Norm, Vertical, Axis;
-	RB_MulMatVec3f(&CenterRot, &EndPos, &Axis);
-
-	RB_CalcVerticalVec3f(&Axis, &Vertical);
-	RB_Vec3fCreate(((Radius)*(Vertical.e[0])), ((Radius)*(Vertical.e[1])), ((Radius)*(Vertical.e[2])), &Rel);
-	RB_Vec3fNormalize(&Axis, &Norm);
-
-	///シリンダーの描画
-	CreateCylinderStruct(object_id, &Axis, &Norm, &Rel, &CenterPos);
-}
-
-
-RBSTATIC void GenerateSphereDat(void)
-{
-	fprintf(plt_3d, "F_sphere_x(u,v)=sin(u)*cos(v)\n");
-	fprintf(plt_3d, "F_sphere_y(u,v)=sin(u)*sin(v)\n");
-	fprintf(plt_3d, "F_sphere_z(u,v)=cos(u)\n");
-
-	fprintf(plt_3d, "set xrange [0:pi] \n");
-	fprintf(plt_3d, "set yrange [-pi:pi] \n");
-
-	fprintf(plt_3d, "set samples 12 \n");
-	fprintf(plt_3d, "set isosamples 24 \n");
-
-	fprintf(plt_3d, "sphere=\"sphere.dat\" \n");
-	fprintf(plt_3d, "set table sphere \n");
-	fprintf(plt_3d, "splot 0 \n");
-	fprintf(plt_3d, "unset xrange \n");
-	fprintf(plt_3d, "unset yrange \n");
+	CreateCylinderStruct(object_id, Radius, &EndPos, &CenterRot, &CenterPos);
 }
 
 RBSTATIC void DrawBox(uint32_t id)
@@ -356,7 +343,7 @@ RBSTATIC void DrawBox(uint32_t id)
 	RB_Vec3fCreate(   lx, wh_y,   lz, &(BoxInitArray[7u]));//H7
 
 	//CenterRotを反映
-	for(uint8_t i = 0u; i < 8u; i++)
+	for(uint32_t i = 0u; i < 8u; i++)
 	{
 		RB_Vec3f RotVec;
 		RB_MulMatVec3f(&ObjectData[id].CenterRot, &BoxInitArray[i], &RotVec);
@@ -483,25 +470,30 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 	else
 	{
 		SSV_T *SSV_obj;
+		RB_Vec3f EndPos;
 		switch(ShapeType)
 		{
 			case 2u:
 				SSV_obj = &Object->Capsule;
+				EndPos = SSV_obj->EndPos;
 				break;
 
 			case 3u:
 				SSV_obj = &Object->Cylinder;
+				EndPos = SSV_obj->EndPos;
 				break;
 
 			default:
 				SSV_obj = &Object->Sphere;
+				float Sphere_Radius = SSV_obj->Radius;
+				RB_Vec3fCreate(0.0f, 0.0f, Sphere_Radius, &EndPos);
 				break;
 		}
-		RB_Vec3f *EndPos = &SSV_obj->EndPos;
+
 		float Radius = SSV_obj->Radius;
 
 		RB_Vec3f RotVec, ArrowVec, Vertical, RadiusArrow;
-		RB_MulMatVec3f(m, EndPos, &RotVec);
+		RB_MulMatVec3f(m, &EndPos, &RotVec);
 		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
 
 		fprintf(plt_3d,"set colorsequence default\n");
@@ -514,7 +506,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 		);//x
 
 		arrow_num++;
-		RB_CalcVerticalVec3f(EndPos, &Vertical);
+		RB_CalcVerticalVec3f(&EndPos, &Vertical);
 		RB_Vec3fCreate(((Radius)*(Vertical.e[0])), ((Radius)*(Vertical.e[1])), ((Radius)*(Vertical.e[2])), &RadiusArrow);
 		RB_MulMatVec3f(m, &RadiusArrow, &RotVec);
 		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
@@ -528,7 +520,9 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 			(ArrowVec.e[1]),\
 			(ArrowVec.e[2])\
 		);//x
-		arrow_num++;		
+		arrow_num++;
+		arrow_num++;
+
 		fprintf(plt_3d,"set colorsequence classic\n");
 	}
 }
@@ -547,6 +541,7 @@ RBSTATIC void DrawObject3d(void)
 				break;
 
 			case 2u:
+				//DrawCapsule(id);
 				break;
 
 			case 3u:
@@ -653,7 +648,7 @@ RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float lengt
 
 RBSTATIC void SplotData(void)
 {
-	fprintf(plt_3d," splot -10 \n");
+	fprintf(plt_3d," splot -1 \n");
 }
 
 RBSTATIC void DrawWorldCoordinateSys(void)
@@ -667,7 +662,7 @@ RBSTATIC void DrawCoordinateSys(void)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
-	for(uint8_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
+	for(uint32_t id = 1u; id < (uint32_t)OBJECT_MAXID; id++)
 	{
 		float axis_length = (ObjectData[id].TFMode) ? 200.0f : 0.0f;
 		CoordinateSys_Config(id, &(ObjectData[id].CenterPos), axis_length, &(ObjectData[id].CenterRot));
@@ -703,10 +698,6 @@ void GnuPlot_Init(void)
 
 void GnuPlot_PreStartProc(void)
 {
-
-//データを作成
-	GenerateSphereDat();
-
 //1回の設定で済むものたち
 	DrawWorldCoordinateSys();
 	ColorConfig();
@@ -722,11 +713,7 @@ void GnuPlot_Cycle(void)
 	DrawCoordinateSys();
 	DrawObject3d();
 	DrawObjectArrow();
-
-	RB_Vec3f ram = { { 0.0f, 0.0f, 500.0f} };
-	CreateSphereStruct(10u, 300.0f, &ram);
 	SplotData();
-
 	//fprintf(plt_3d, "e\n");
 	fflush(plt_3d);
 }
