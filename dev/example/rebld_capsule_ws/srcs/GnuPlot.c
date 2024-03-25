@@ -58,7 +58,7 @@ RBSTATIC void ReservationObjectId(void)
 				break;
 
 			case 2u:
-				add_id = 602u;
+				add_id = 312u;
 				printf("Capsule:\t");
 				break;
 
@@ -304,8 +304,6 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 
 	RB_Vec3f CircleVtexTop[24u] = { 0.0f };
 	RB_Vec3f CircleVtexBottom[24u] = { 0.0f };
-	RB_Vec3f CapsuleVtex[7u][24u] = { 0.0f };
-
 
 	uint32_t object_id = id;
 
@@ -318,7 +316,7 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 
 	//位置のオフセットを反映
 	RB_Vec3fAdd(pos, &Axis, &ObjAxis);
-	DevPlotArrow(arrow_num, "red", pos, &ObjAxis );
+	//DevPlotArrow(arrow_num, "red", pos, &ObjAxis );
 	arrow_num++;
 
 	//オブジェクトの軸の単位ベクトルを作成
@@ -334,7 +332,7 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 	RB_Vec3fAdd(pos, &BottomRel, &ObjRadius);
 
 	//オブジェクトの半径を描画
-	DevPlotArrow(arrow_num, "blue", pos, &ObjRadius );
+	//DevPlotArrow(arrow_num, "blue", pos, &ObjRadius );
 	arrow_num++;
 //=========================
 	RB_Vec3f devRel, devPos;
@@ -342,11 +340,14 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
 	RB_VecRotateVec3f(Deg2Rad(-90.0f), &Z_Norm, &BottomRel, &devRel);
 
+	//副軸(x)を作成
+	RB_Vec3fNormalize(&devRel, &X_Norm);
+
 	//位置のオフセットを反映
 	RB_Vec3fAdd(pos, &devRel, &devPos);
 
 	//オブジェクトの半径を描画
-	DevPlotArrow(arrow_num, "green", pos, &devPos );
+	//DevPlotArrow(arrow_num, "green", pos, &devPos );
 	arrow_num++;
 
 
@@ -381,8 +382,8 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 			RB_Vec3fAdd(pos, &TopOffset, &CircleVtexTop[i]);
 
 			//始点: オブジェクト軸の終点(ObjAxis), 終点: CircleVtexTop[i]
-			DevPlotArrow(arrow_num, "dark-green", &ObjAxis, &CircleVtexTop[i] );
-			arrow_num++;
+			//DevPlotArrow(arrow_num, "dark-green", &ObjAxis, &CircleVtexTop[i] );
+			//arrow_num++;
 		}
 
 
@@ -391,6 +392,67 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 	{
 		CreateCylinderSide(object_id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
 		object_id++;
+	}
+
+	//半球部分の描画
+	RB_Vec3f CapsuleBtmVtex[7u][24u] = { 0.0f };
+	RB_Vec3f CapsuleTopVtex[7u][24u] = { 0.0f };
+
+	for(uint32_t i = 0u; i < 7u; i++)
+	{
+		RB_Vec3f BtmVertical, BtmOffset, BtmVertx;
+		RB_Vec3f TpVertical, TpOffset, TpVertx;
+		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &X_Norm, &BottomRel, &BtmVertical);
+		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &X_Norm, &BottomRel, &TpVertical);
+
+		for(uint32_t j = 0u; j < 24u; j++)
+		{
+			//底部の描画
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &Z_Norm, &BtmVertical, &BtmOffset);
+			RB_Vec3fAdd(pos, &BtmOffset, &CapsuleBtmVtex[i][j]);
+			//RB_Vec3fAdd(pos, &BtmOffset, &BtmVertx);
+			//DevPlotArrow(arrow_num, "orange", pos, &BtmVertx );
+			//arrow_num++;
+
+			//上部の描画
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &Z_Norm, &TpVertical, &TpOffset);
+			RB_Vec3fAdd(&ObjAxis, &TpOffset, &CapsuleTopVtex[i][j]);
+			//RB_Vec3fAdd(&ObjAxis, &TpOffset, &TpVertx);
+			//DevPlotArrow(arrow_num, "orange", &ObjAxis, &TpVertx);
+			//arrow_num++;
+		}
+	}
+
+	for(uint32_t i = 0u; i < 6u; i++)
+	{
+		for(uint32_t j = 0u; j < 24u; j++)
+		{
+			uint32_t k = (j == 23u) ? 0u : (j + 1u);
+
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u)  \
+			);
+			object_id++;
+
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u)  \
+			);
+			object_id++;
+		}
 	}
 }
 
@@ -606,7 +668,6 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 			case 2u:
 				SSV_obj = &Object->Capsule;
 				EndPos = SSV_obj->EndPos;
-				goto END;
 				break;
 
 			case 3u:
@@ -656,10 +717,6 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 
 		fprintf(plt_3d,"set colorsequence classic\n");
 	}
-
-//TODO 確認が済んだら消す
-END:
-
 }
 
 RBSTATIC void DrawObject3d(void)

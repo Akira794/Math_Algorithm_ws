@@ -361,7 +361,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #if 0
 	//シリンダー
 	ConfigPose(-600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
+	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
@@ -376,6 +376,11 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//球体
 	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 200.0f);
+
+	//カプセル
+	ConfigPose(300.0f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
 #if 0
 	ConfigPose(-300.0f, -200.0f, 0.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
