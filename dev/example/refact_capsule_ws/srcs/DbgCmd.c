@@ -360,18 +360,39 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f Rel;
 
 	//シリンダー
-	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
-	ConfigCylinderObject(&Pose, 200.0f, &Rel);
-
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 400.0f, 0.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
 	//カプセル
-	ConfigPose(400.0f, -400.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(200.0f, 500.0f, 300.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
+	ConfigPose(-800.0f, -400.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(-200.0f, 500.0f, 300.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//カプセル
+	ConfigPose(0.0f, -800.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(400.0f, 0.0f, 0.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//カプセル
+	ConfigPose(0.0f, -300.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 400.0f, 0.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//カプセル
+	ConfigPose(0.0f, 600.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//シリンダー
+	ConfigPose(-800.0f, 800.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
+	ConfigCylinderObject(&Pose, 200.0f, &Rel);
+#if 0
+	//カプセル
+	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
+	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
 	//球体
 	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
@@ -381,7 +402,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(300.0f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
-#if 0
+
 	ConfigPose(-300.0f, -200.0f, 0.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 1u);

@@ -119,13 +119,13 @@ RBSTATIC void DrawGround(float z)
 
 RBSTATIC void CreateSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
 {
-	//主軸に対する単位ベクトル
-	RB_Vec3f elx, elz;
+	//中心軸と半径に対する単位ベクトル
+	RB_Vec3f radius_uvec, axis_uvec;
 
-	//中心軸(z軸)の単位ベクトルを作成
-	RB_Vec3fNormalize(CentralAxis, &elz);
-	//半径軸(x軸)の単位ベクトルを作成
-	RB_CalcVerticalVec3f(&elz, &elx);
+	//中心軸の単位ベクトルを作成
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+	//半径の単位ベクトルを作成
+	RB_CalcVerticalVec3f(&axis_uvec, &radius_uvec);
 
 	//球体を構成する頂点の配列を用意
 	RB_Vec3f Vertex[13u][24u] = { 0.0f };
@@ -137,14 +137,14 @@ RBSTATIC void CreateSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *C
 	//半径軸を回転させる
 	for(uint32_t i = 0u; i < 13u; i++)
 	{
-		RB_Vec3f Y_Vertex, Rel_Vertex;
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &elx, CentralAxis, &Y_Vertex);
+		RB_Vec3f Rot_Vertex, Rel_Vertex;
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &radius_uvec, CentralAxis, &Rot_Vertex);
 
 		//中心軸を回転させる
 		for(uint32_t j = 0u; j < 24u; j++)
 		{
-			//Y_Vertexをelz(中心軸)を回転軸として回転させたRel_Vertex(相対位置頂点)を求める
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &elz, &Y_Vertex, &Rel_Vertex);
+			//Rot_Vertexをaxis_uvec(中心軸)を回転軸として回転させたRel_Vertex(相対位置頂点)を求める
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &Rot_Vertex, &Rel_Vertex);
 			
 			//球体の中心点を足してworld座標系の位置を格納
 			RB_Vec3fAdd(CentralPos, &Rel_Vertex, &Vertex[i][j]);
@@ -254,26 +254,26 @@ RBSTATIC void CreateCylinderSurface(uint32_t id, float objectsolid_val, RB_Vec3f
 RBSTATIC void CreateCylinderStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
 {
 	//主軸に対する単位ベクトル
-	RB_Vec3f elx, elz;
-	RB_Vec3f BottomX_Radius, TopX_Radius;
+	RB_Vec3f radius_uvec, axis_uvec;
+	RB_Vec3f Bottom_RadiusVec, TopX_Radius;
 
 	RB_Vec3f VertexTop[24u] = { 0.0f };
 	RB_Vec3f VertexBottom[24u] = { 0.0f };
 
 	uint32_t object_id = id;
 
-	RB_Vec3fNormalize(CentralAxis, &elz);
-	RB_CalcVerticalVec3f(CentralAxis, &elx);
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+	RB_CalcVerticalVec3f(CentralAxis, &radius_uvec);
 
 	//半径ベクトルを作成
-	RB_Vec3fCreate(((radius)*(elx.e[0])), ((radius)*(elx.e[1])), ((radius)*(elx.e[2])), &BottomX_Radius);
+	RB_Vec3fCreate(((radius)*(radius_uvec.e[0])), ((radius)*(radius_uvec.e[1])), ((radius)*(radius_uvec.e[2])), &Bottom_RadiusVec);
 
 	for(uint32_t i = 0u; i < 24u; i++)
 	{
 		RB_Vec3f BottomVertex, TopVertex;
 
 		//底部の頂点を計算
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &elz, &BottomX_Radius, &BottomVertex);
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &axis_uvec, &Bottom_RadiusVec, &BottomVertex);
 
 		//上部の頂点を計算
 		RB_Vec3fAdd(CentralAxis, &BottomVertex, &TopVertex);
@@ -319,121 +319,80 @@ RBSTATIC void DrawCylinder(uint32_t id)
 
 RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
 {
+	RB_Vec3f radius_uvec, axis_uvec;
+	RB_Vec3f Axis, Bottom_RadiusVec, Z_Norm, RadiusNorm;
 
-	RB_Vec3f Axis, TopRel, BottomRel, Z_Norm, X_Norm, RadiusNorm;
-
-	RB_Vec3f CircleVtexTop[24u] = { 0.0f };
-	RB_Vec3f CircleVtexBottom[24u] = { 0.0f };
+	RB_Vec3f VertexTop[24u] = { 0.0f };
+	RB_Vec3f VertexBottom[24u] = { 0.0f };
 
 	uint32_t object_id = id;
-
 	uint32_t arrow_num = 1000u;
 
-	RB_Vec3f ObjAxis;
-
-	//位置のオフセットを反映
-	RB_Vec3fAdd(CentralPos, CentralAxis, &ObjAxis);
-	//DevPlotArrow(arrow_num, "red", pos, &ObjAxis );
-	arrow_num++;
-
 	//オブジェクトの軸の単位ベクトルを作成
-	RB_Vec3fNormalize(CentralAxis, &Z_Norm);
-	RB_CalcVerticalVec3f(&Z_Norm, &X_Norm);
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+	RB_CalcVerticalVec3f(CentralAxis, &radius_uvec);
 
 //==========オブジェクトの半径ベクトルを作成
-	RB_Vec3f ObjRadius;
-	RB_CalcVerticalVec3f(CentralAxis, &RadiusNorm);
-	RB_Vec3fCreate(((radius)*(RadiusNorm.e[0])), ((radius)*(RadiusNorm.e[1])), ((radius)*(RadiusNorm.e[2])), &BottomRel);
-
-	//位置のオフセットを反映
-	RB_Vec3fAdd(CentralPos, &BottomRel, &ObjRadius);
-
-	//オブジェクトの半径を描画
-	//DevPlotArrow(arrow_num, "blue", pos, &ObjRadius );
-	arrow_num++;
-//=========================
-	RB_Vec3f devRel, devPos;
-
-	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
-	RB_VecRotateVec3f(Deg2Rad(-90.0f), &Z_Norm, &BottomRel, &devRel);
-
-	//副軸(x)を作成
-	RB_Vec3fNormalize(&devRel, &X_Norm);
-
-	//位置のオフセットを反映
-	RB_Vec3fAdd(CentralPos, &devRel, &devPos);
-
-	//オブジェクトの半径を描画
-	//DevPlotArrow(arrow_num, "green", pos, &devPos );
-	arrow_num++;
+	RB_Vec3fCreate(((radius)*(radius_uvec.e[0])), ((radius)*(radius_uvec.e[1])), ((radius)*(radius_uvec.e[2])), &Bottom_RadiusVec);
 
 
-	//オブジェクトの軸にBottomRelを足してTopRelを作成
-	RB_Vec3fAdd(CentralAxis, &BottomRel, &TopRel);
-
+	//カプセル円柱側面の描画===================================================================================
 		for(uint32_t i = 0u; i < 24u; i++)
 		{
-			RB_Vec3f BottomOffset;
-			RB_Vec3f TopOffset;
+			RB_Vec3f BottomVertex, TopVertex;
 
 		//Bottom
-			//オブジェクトの主軸(Z_Norm:単位ベクトル)を軸に15(deg)ずつBottomRelベクトルを回転
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Z_Norm, &BottomRel, &BottomOffset);
+			//底部の頂点を計算
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &axis_uvec, &Bottom_RadiusVec, &BottomVertex);
 
-			//オフセットベクトル(Bottom)にオブジェクト軸の始点(pos[CenterPos])を加算
-			RB_Vec3fAdd(CentralPos, &BottomOffset, &CircleVtexBottom[i]);
-#if 0
-			//始点: オブジェクト軸の始点(pos[CenterPos]), 終点: CircleVtexBottom[i]
-			DevPlotArrow(arrow_num, "dark-green", pos, &CircleVtexBottom[i] );
-			arrow_num++;
-#endif
+			//上部の頂点を計算
+			RB_Vec3fAdd(CentralAxis, &BottomVertex, &TopVertex);
 
-		//Top
-			//オブジェクトの主軸(Z_Norm:単位ベクトル)を軸に15(deg)ずつTopRelベクトルを回転
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &Z_Norm, &TopRel, &TopOffset);
-
-			//オフセットベクトル(Top)にオブジェクト軸の始点(pos[CenterPos])を加算
-			RB_Vec3fAdd(CentralPos, &TopOffset, &CircleVtexTop[i]);
-
-			//始点: オブジェクト軸の終点(ObjAxis), 終点: CircleVtexTop[i]
-			//DevPlotArrow(arrow_num, "dark-green", &ObjAxis, &CircleVtexTop[i] );
-			//arrow_num++;
+			//上部、底部の位置をworld座標系に反映し格納
+			RB_Vec3fAdd(CentralPos, &BottomVertex, &VertexBottom[i]);
+			RB_Vec3fAdd(CentralPos, &TopVertex, &VertexTop[i]);
 		}
 
-
-	//円柱側面
 	for(uint32_t i = 0u; i < 24; i++)
 	{
-		CreateCylinderSide(object_id, objectsolid_val, i, CircleVtexBottom, CircleVtexTop);
+		CreateCylinderSide(object_id, objectsolid_val, i, VertexBottom, VertexTop);
 		object_id++;
 	}
 
-	//半球部分の描画
+	//半球部分の描画=============================================================================================
 	RB_Vec3f CapsuleBtmVtex[7u][24u] = { 0.0f };
 	RB_Vec3f CapsuleTopVtex[7u][24u] = { 0.0f };
 
+	RB_Vec3f devRel;
+
+	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
+	RB_VecRotateVec3f(Deg2Rad(-90.0f), &axis_uvec, &Bottom_RadiusVec, &devRel);
+
+	//Rot_Vertexを作成
+	RB_Vec3f  Rot_Vertex;
+	RB_Vec3fNormalize(&devRel, &Rot_Vertex);
+
 	for(uint32_t i = 0u; i < 7u; i++)
 	{
-		RB_Vec3f BtmVertical, BtmOffset, BtmVertx;
-		RB_Vec3f TpVertical, TpOffset, TpVertx;
-		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &X_Norm, &BottomRel, &BtmVertical);
-		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &X_Norm, &BottomRel, &TpVertical);
+		RB_Vec3f HemiBtmVertex, HemiTopVertex;
+		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &Rot_Vertex, &Bottom_RadiusVec, &HemiBtmVertex);
+		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &Rot_Vertex, &Bottom_RadiusVec, &HemiTopVertex);
 
 		for(uint32_t j = 0u; j < 24u; j++)
 		{
+			RB_Vec3f BottomVertex, TopVertex;
+
 			//底部の描画
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &Z_Norm, &BtmVertical, &BtmOffset);
-			RB_Vec3fAdd(CentralPos, &BtmOffset, &CapsuleBtmVtex[i][j]);
-			//RB_Vec3fAdd(pos, &BtmOffset, &BtmVertx);
-			//DevPlotArrow(arrow_num, "orange", pos, &BtmVertx );
-			//arrow_num++;
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiBtmVertex, &BottomVertex);
+			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
 
 			//上部の描画
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &Z_Norm, &TpVertical, &TpOffset);
-			RB_Vec3fAdd(&ObjAxis, &TpOffset, &CapsuleTopVtex[i][j]);
-			//RB_Vec3fAdd(&ObjAxis, &TpOffset, &TpVertx);
-			//DevPlotArrow(arrow_num, "orange", &ObjAxis, &TpVertx);
-			//arrow_num++;
+			RB_Vec3f ObjAxis;
+			//位置のオフセットを反映
+			RB_Vec3fAdd(CentralPos, CentralAxis, &ObjAxis);
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiTopVertex, &TopVertex);
+			RB_Vec3fAdd(&ObjAxis, &TopVertex, &CapsuleTopVtex[i][j]);
+
 		}
 	}
 
