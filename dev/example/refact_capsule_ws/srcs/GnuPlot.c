@@ -384,15 +384,14 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 
 			//底部の描画
 			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiBtmVertex, &BottomVertex);
-			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
 
 			//上部の描画
 			RB_Vec3f ObjAxis;
-			//位置のオフセットを反映
 			RB_Vec3fAdd(CentralPos, CentralAxis, &ObjAxis);
 			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiTopVertex, &TopVertex);
-			RB_Vec3fAdd(&ObjAxis, &TopVertex, &CapsuleTopVtex[i][j]);
 
+			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
+			RB_Vec3fAdd(&ObjAxis, &TopVertex, &CapsuleTopVtex[i][j]);
 		}
 	}
 
