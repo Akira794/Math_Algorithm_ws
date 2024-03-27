@@ -257,8 +257,6 @@ RBSTATIC void CreateCylinderStruct(uint32_t id, float objectsolid_val, float rad
 	RB_Vec3f elx, elz;
 	RB_Vec3f BottomX_Radius, TopX_Radius;
 
-	RB_Vec3f Rel, Norm, Vertical, Axis;
-
 	RB_Vec3f VertexTop[24u] = { 0.0f };
 	RB_Vec3f VertexBottom[24u] = { 0.0f };
 
@@ -269,20 +267,6 @@ RBSTATIC void CreateCylinderStruct(uint32_t id, float objectsolid_val, float rad
 
 	//半径ベクトルを作成
 	RB_Vec3fCreate(((radius)*(elx.e[0])), ((radius)*(elx.e[1])), ((radius)*(elx.e[2])), &BottomX_Radius);
-
-#if 0
-	RB_Vec3fAdd(CentralAxis, &BottomX_Radius, &TopX_Radius);
-
-	for(uint32_t i = 0u; i < 24u; i++)
-	{
-		RB_Vec3f BottomVertex, TopVertex;
-
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &elz, &BottomX_Radius, &BottomVertex);
-		RB_Vec3fAdd(CentralPos, &BottomVertex, &VertexBottom[i]);
-		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &elz, &TopX_Radius, &TopVertex);
-		RB_Vec3fAdd(CentralPos, &TopVertex, &VertexTop[i]);
-	}
-#endif
 
 	for(uint32_t i = 0u; i < 24u; i++)
 	{
