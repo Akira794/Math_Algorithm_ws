@@ -193,7 +193,7 @@ RBSTATIC void DrawSphere(uint32_t id)
 }
 
 //Cylinderの側面を長方形で描画
-RBSTATIC void CreateCylinderSide(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
+RBSTATIC void CreateCylinderPolygon(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop)
 {
 	uint32_t k = (j == 23u) ? 0u : (j + 1u);
 
@@ -211,7 +211,7 @@ RBSTATIC void CreateCylinderSide(uint32_t id, float objectsolid_val, uint32_t j,
 }
 
 //Cylinderの底面と上面を円(正24角形)で描画
-RBSTATIC void CreateCylinderSurface(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
+RBSTATIC void CreateCirclePolygon(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str)
 {
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from \
@@ -284,15 +284,15 @@ RBSTATIC void CreateCylinderStruct(uint32_t id, float objectsolid_val, float rad
 	}
 
 	//円柱の底面・上面
-	CreateCylinderSurface(object_id, objectsolid_val, VertexBottom, "#0918e6");
+	CreateCirclePolygon(object_id, objectsolid_val, VertexBottom, "#0918e6");
 	object_id++;
-	CreateCylinderSurface(object_id, objectsolid_val, VertexTop, "green");
+	CreateCirclePolygon(object_id, objectsolid_val, VertexTop, "green");
 	object_id++;
 
 	//円柱側面
 	for(uint32_t i = 0u; i < 24; i++)
 	{
-		CreateCylinderSide(object_id, objectsolid_val, i, VertexBottom, VertexTop);
+		CreateCylinderPolygon(object_id, objectsolid_val, i, VertexBottom, VertexTop);
 		object_id++;
 	}
 }
@@ -317,6 +317,81 @@ RBSTATIC void DrawCylinder(uint32_t id)
 	CreateCylinderStruct(object_id, objectsolid_val, Radius, &CentralAxis, &CenterPos);
 }
 
+RBSTATIC void CreateHemiSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralAxis, RB_Vec3f *RadiusVec, RB_Vec3f *CentralPos)
+{
+	RB_Vec3f axis_uvec;
+	uint32_t object_id = id;
+
+	RB_Vec3f CapsuleBtmVtex[13u][24u] = { 0.0f };
+	RB_Vec3f CapsuleTopVtex[13u][24u] = { 0.0f };
+
+	RB_Vec3f Rot_Vertex;
+
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+
+	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
+	RB_VecRotateVec3f(Deg2Rad(-90.0f), &axis_uvec, RadiusVec, &Rot_Vertex);
+
+	//Rot_Vertexを作成
+	RB_Vec3f  Rot_uvec;
+	RB_Vec3fNormalize(&Rot_Vertex, &Rot_uvec);
+
+	for(uint32_t i = 0u; i < 7u; i++)
+	{
+		RB_Vec3f HemiBtmVertex, HemiTopVertex;
+		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &Rot_uvec, RadiusVec, &HemiBtmVertex);
+		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &Rot_uvec, RadiusVec, &HemiTopVertex);
+
+		for(uint32_t j = 0u; j < 24u; j++)
+		{
+			RB_Vec3f BottomVertex, TopVertex;
+
+			//底部の描画
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiBtmVertex, &BottomVertex);
+
+			//上部の描画
+			RB_Vec3f HemiTopPos;
+			RB_Vec3fAdd(CentralPos, CentralAxis, &HemiTopPos);
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiTopVertex, &TopVertex);
+
+			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
+			RB_Vec3fAdd(&HemiTopPos, &TopVertex, &CapsuleTopVtex[i][j]);
+		}
+	}
+
+	for(uint32_t i = 0u; i < 6u; i++)
+	{
+		for(uint32_t j = 0u; j < 24u; j++)
+		{
+
+			uint32_t k = (j == 23u) ? 0u : (j + 1u);
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u)  \
+			);
+			object_id++;
+
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u)  \
+			);
+			object_id++;
+		}
+	}
+}
+
 RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
 {
 	RB_Vec3f radius_uvec, axis_uvec;
@@ -326,7 +401,6 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 	RB_Vec3f VertexBottom[24u] = { 0.0f };
 
 	uint32_t object_id = id;
-	uint32_t arrow_num = 1000u;
 
 	//オブジェクトの軸の単位ベクトルを作成
 	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
@@ -355,82 +429,13 @@ RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radi
 
 	for(uint32_t i = 0u; i < 24; i++)
 	{
-		CreateCylinderSide(object_id, objectsolid_val, i, VertexBottom, VertexTop);
+		CreateCylinderPolygon(object_id, objectsolid_val, i, VertexBottom, VertexTop);
 		object_id++;
 	}
 
-	//半球部分の描画=============================================================================================
-	RB_Vec3f CapsuleBtmVtex[7u][24u] = { 0.0f };
-	RB_Vec3f CapsuleTopVtex[7u][24u] = { 0.0f };
-
-	RB_Vec3f devRel;
-
-	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
-	RB_VecRotateVec3f(Deg2Rad(-90.0f), &axis_uvec, &Bottom_RadiusVec, &devRel);
-
-	//Rot_Vertexを作成
-	RB_Vec3f  Rot_Vertex;
-	RB_Vec3fNormalize(&devRel, &Rot_Vertex);
-
-	for(uint32_t i = 0u; i < 7u; i++)
-	{
-		RB_Vec3f HemiBtmVertex, HemiTopVertex;
-		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &Rot_Vertex, &Bottom_RadiusVec, &HemiBtmVertex);
-		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &Rot_Vertex, &Bottom_RadiusVec, &HemiTopVertex);
-
-		for(uint32_t j = 0u; j < 24u; j++)
-		{
-			RB_Vec3f BottomVertex, TopVertex;
-
-			//底部の描画
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiBtmVertex, &BottomVertex);
-
-			//上部の描画
-			RB_Vec3f ObjAxis;
-			RB_Vec3fAdd(CentralPos, CentralAxis, &ObjAxis);
-			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiTopVertex, &TopVertex);
-
-			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
-			RB_Vec3fAdd(&ObjAxis, &TopVertex, &CapsuleTopVtex[i][j]);
-		}
-	}
-
-	for(uint32_t i = 0u; i < 6u; i++)
-	{
-		for(uint32_t j = 0u; j < 24u; j++)
-		{
-			uint32_t k = (j == 23u) ? 0u : (j + 1u);
-
-			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
-			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-				depthorder fillcolor \"steelblue\" \n", \
-				object_id, \
-				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u), \
-				RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 2u), \
-				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 2u), \
-				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 2u), \
-				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u)  \
-			);
-			object_id++;
-
-			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
-			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-				depthorder fillcolor \"steelblue\" \n", \
-				object_id, \
-				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u), \
-				RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 2u), \
-				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 2u), \
-				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 2u), \
-				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u)  \
-			);
-			object_id++;
-		}
-	}
+	//カプセル上部,底部の半球を描画
+	CreateHemiSphereStruct(object_id, objectsolid_val, CentralAxis, &Bottom_RadiusVec, CentralPos);
 }
-
-
-
-
 
 RBSTATIC void DrawCapsule(uint32_t id)
 {
