@@ -13,31 +13,36 @@ RBSTATIC uint32_t f_ObjectStartId[OBJECT_MAXID] = { 0u };
 RBSTATIC void ReservationObjectId(void);
 RBSTATIC void DrawGround(float z);
 
-//Next: SphereStruct build
+//SphereStruct
+RBSTATIC void CreateSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos);
 RBSTATIC void DrawSphere(uint32_t id);
 
 //CylinderStruct build
-RBSTATIC void CreateCylinderSide(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop);
-RBSTATIC void CreateCylinderSurface(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str);
+RBSTATIC void CreateCylinderPolygon(uint32_t id, float objectsolid_val, uint32_t j, RB_Vec3f *CircleVtexBottom, RB_Vec3f *CircleVtexTop);
+RBSTATIC void CreateCirclePolygon(uint32_t id, float objectsolid_val, RB_Vec3f *CircleVtex, char *str);
 RBSTATIC void CreateCylinderStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos);
 RBSTATIC void DrawCylinder(uint32_t id);
 
-RBSTATIC void GenerateSphereDat(void);
+//CapsuleStruct build
+RBSTATIC void CreateHemiSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralAxis, RB_Vec3f *RadiusVec, RB_Vec3f *CentralPos);
+RBSTATIC void CreateCapsuleStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos);
+RBSTATIC void DrawCapsule(uint32_t id);
 
 //BoxStruct build
 RBSTATIC void DrawBox(uint32_t id);
 
-RBSTATIC void DrawObjectSize(uint32_t id, OBJECT_T *Object);
+//ObjectSizeArrow
+RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object);
 RBSTATIC void DrawObject3d(void);
+RBSTATIC void DrawObjectArrow(void);
 
+RBSTATIC void ColorConfig(void);
 RBSTATIC void UnsetConfig(void);
 RBSTATIC void SetConfig(void);
-RBSTATIC void SplotData(void);
 
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m);
 RBSTATIC void DrawWorldCoordinateSys(void);
 RBSTATIC void DrawCoordinateSys(void);
-
 
 RBSTATIC void DevPlotArrow(uint32_t arrow_id, char *color, RB_Vec3f *startpos, RB_Vec3f *endpos )
 {
@@ -776,10 +781,6 @@ RBSTATIC void SetConfig(void)
 
 	//参考: https://ayapin-film.sakura.ne.jp/Gnuplot/Primer/Parametric/3dparam_sphere_pm3d.html
 	fprintf(plt_3d, "set macro \n");
-	
-	fprintf(plt_3d, "FSx=\"F_sphere_x($1,$2)\" \n");
-	fprintf(plt_3d, "FSy=\"F_sphere_y($1,$2)\" \n");
-	fprintf(plt_3d, "FSz=\"F_sphere_z($1,$2)\" \n");
 }
 
 RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float length, RBCONST RB_Mat3f *m)
@@ -818,11 +819,6 @@ RBSTATIC void CoordinateSys_Config(uint32_t id, RBCONST RB_Vec3f *v, float lengt
 
 }
 
-RBSTATIC void SplotData(void)
-{
-	fprintf(plt_3d," splot -1 \n");
-}
-
 RBSTATIC void DrawWorldCoordinateSys(void)
 {
 	float axis_length = 100.0f;
@@ -853,6 +849,11 @@ RBSTATIC void DrawCoordinateSys(void)
 		RB_Vec3fGetElem(&LabelPos,2u)\
 		);
 	}
+}
+
+RBSTATIC void SplotData(void)
+{
+	fprintf(plt_3d," splot -1 \n");
 }
 
 void GnuPlot_Init(void)

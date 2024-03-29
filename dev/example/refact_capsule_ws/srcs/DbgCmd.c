@@ -46,46 +46,6 @@ RBSTATIC void ShowCmdStatus(void)
 	printf("-----------------------------------\n");	
 }
 
-#if 0
-RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos)
-{
-	float NowPos_elem = f_ObjectData[id].CenterPos.e[elem];
-	RB_Vec3fSetElem(&(f_ObjectData[id].CenterPos), elem, (NowPos_elem + step_pos));
-}
-
-RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg)
-{
-	float NowRPY_elem = f_RPY[id].e[elem];
-	RB_Mat3f Now_Rot = f_ObjectData[id].CenterRot;
-	RB_Mat3f Target_Rot;
-	RB_Vec3f axis;
-	
-	switch(elem)
-	{
-		case 0:
-			RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &axis);
-			break;
-
-		case 1:
-			RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &axis);
-			break;
-
-		case 2:
-			RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &axis);
-			break;
-
-		default:
-			RB_Vec3fCreate(0.0f, 0.0f, 0.0f, &axis);
-			break;
-	}
-	RB_AxisRotateMat3f(&axis, Deg2Rad(step_deg), &Target_Rot);
-	//姿勢情報の更新
-	f_RPY[id].e[elem] = NowRPY_elem + step_deg;
-	RB_MulMatMat3f(&Target_Rot, &Now_Rot, &(f_ObjectData[id].CenterRot));
-
-}
-#endif
-
 RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos)
 {
 	float NowPos_elem = f_ObjectData[id].CenterPos.e[elem];
@@ -368,7 +328,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(-800.0f, -400.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(-200.0f, 500.0f, 300.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
-
+#if 0
 	//カプセル
 	ConfigPose(0.0f, -800.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 0.0f, 0.0f, &Rel);
@@ -384,11 +344,6 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
-	//シリンダー
-	ConfigPose(-800.0f, 800.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
-	ConfigCylinderObject(&Pose, 200.0f, &Rel);
-#if 0
 	//カプセル
 	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
@@ -402,7 +357,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(300.0f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
-
+#endif
 	ConfigPose(-300.0f, -200.0f, 0.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 1u);
@@ -415,6 +370,10 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 3u);
 
+	ConfigPose(-500.0f, 0.0f, 300.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 300.0f, 100.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 4u);
+
 	ConfigPose(0.0f, -900.0f, 1000.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 5u);
@@ -422,7 +381,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(300.0f, -200.0f, 100.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
-#endif
+
 
 	for(uint32_t id = 0; id < (uint32_t)OBJECT_MAXID; id++)
 	{
