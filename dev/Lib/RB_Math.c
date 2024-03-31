@@ -86,13 +86,23 @@ void RB_Vec3fCross(RBCONST RB_Vec3f *v1, RBCONST RB_Vec3f *v2, RB_Vec3f *v_ans)
 
 void RB_CalcVerticalVec3f(RBCONST RB_Vec3f *v1, RB_Vec3f *v_ans)
 {
-	RB_Vec3f tmp, v2, v1_normalize;
+	RB_Vec3f tmp, mtmp, v2, v1_normalize;
 	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &tmp);
+	RB_Vec3fCreate(-1.0f, 0.0f, 0.0f, &mtmp);
 
 	RB_Vec3fNormalize(v1, &v1_normalize);
+
 	if(RB_Vec3fMatch(&tmp, &v1_normalize))
 	{
 		RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &tmp);
+	}
+	else if(RB_Vec3fMatch(&mtmp, &v1_normalize))
+	{
+		RB_Vec3fCreate(0.0f, -1.0f, 0.0f, &tmp);
+	}
+	else
+	{
+		NO_STATEMENT;
 	}
 
 	RB_Vec3fCross(v1, &tmp, &v2);
