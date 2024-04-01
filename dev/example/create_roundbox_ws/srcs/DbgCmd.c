@@ -320,8 +320,36 @@ RBSTATIC void ConfigRoundBoxObject(POSEDATA_T *Pose, float Radius, float Height,
 	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
 	f_ObjectData[f_id].ShapeType = 4u;
 
-	RB_Vec3f uwidth, WidthPos;
+
+	RB_Vec3f axis[6u];
+	RB_Vec3f axis_vertical[6u];
+
+	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &axis[0u]);
+	RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &axis[1u]);
+	RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &axis[2u]);
+
+	RB_Vec3fCreate(-1.0f, 0.0f, 0.0f, &axis[3u]);
+	RB_Vec3fCreate(0.0f, -1.0f, 0.0f, &axis[4u]);
+	RB_Vec3fCreate(0.0f, 0.0f, -1.0f, &axis[5u]);
+
+	for(uint8_t i = 0u; i < 6u; i++)
+	{
+		RB_CalcVerticalVec3f(&axis[i], &axis_vertical[i]);
+	}
+
+	RB_Vec3fTermOut("axis_x_vertical", &axis_vertical[0u]);
+	RB_Vec3fTermOut("axis_y_vertical", &axis_vertical[1u]);
+	RB_Vec3fTermOut("axis_z_vertical", &axis_vertical[2u]);
+	RB_Vec3fTermOut("m_axis_x_vertical", &axis_vertical[3u]);
+	RB_Vec3fTermOut("m_axis_y_vertical", &axis_vertical[4u]);
+	RB_Vec3fTermOut("m_axis_z_vertical", &axis_vertical[5u]);
+
+
+	RB_Vec3f uwidth, uaxis, WidthPos, Rot_WidthPos;
+
+	RB_Vec3fNormalize(EndPos, &uaxis);
 	RB_CalcVerticalVec3f(EndPos, &uwidth);
+
 	RB_Vec3fCreate(((Height)*(uwidth.e[0])), ((Height)*(uwidth.e[1])), ((Height)*(uwidth.e[2])), &WidthPos);
 
 	roundbox_obj.Radius = Radius;
@@ -339,10 +367,10 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f BoxSize;
 	RB_Vec3f Rel;
 
-#if 1
+#if 0
 	//シリンダー
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 400.0f, 0.0f, &Rel);
+	RB_Vec3fCreate(400.0f, 00.0f, 0.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
 	//カプセル
@@ -353,9 +381,10 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #endif
 	//ひし形
 	ConfigPose(0.00f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(800.0f, 0.0f, 0.0f, &Rel);
+	RB_Vec3fCreate(800.0f, 0.0f, 00.0f, &Rel);
 							//Radius, Width
-	ConfigRoundBoxObject(&Pose, 200.0f, 400.0f, &Rel);
+	ConfigRoundBoxObject(&Pose, 100.0f, 400.0f, &Rel);
+
 
 #if 0
 	//カプセル
@@ -377,7 +406,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
-
+#endif
+#if 0
 	//球体
 	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 200.0f);

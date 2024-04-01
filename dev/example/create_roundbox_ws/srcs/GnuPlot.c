@@ -471,53 +471,207 @@ RBSTATIC void DrawCapsule(uint32_t id)
 //x4
 RBSTATIC void CreateQuarterSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralAxis, RB_Vec3f *RadiusVec, RB_Vec3f *CentralPos)
 {
+	RB_Vec3f axis_uvec;
+	uint32_t object_id = id;
 
+	RB_Vec3f CapsuleBtmVtex[7u][13u] = { 0.0f };
+	RB_Vec3f CapsuleTopVtex[7u][13u] = { 0.0f };
+
+	RB_Vec3f Rot_Vertex;
+
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+
+	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
+	RB_VecRotateVec3f(Deg2Rad(-90.0f), &axis_uvec, RadiusVec, &Rot_Vertex);
+
+	//Rot_Vertexを作成
+	RB_Vec3f  Rot_uvec;
+	RB_Vec3fNormalize(&Rot_Vertex, &Rot_uvec);
+
+	for(uint32_t i = 0u; i < 7u; i++)
+	{
+		RB_Vec3f HemiBtmVertex, HemiTopVertex;
+		RB_VecRotateVec3f(Deg2Rad(-15.0f * (float)i), &Rot_uvec, RadiusVec, &HemiBtmVertex);
+		RB_VecRotateVec3f(Deg2Rad( 15.0f * (float)i), &Rot_uvec, RadiusVec, &HemiTopVertex);
+
+		for(uint32_t j = 0u; j < 13u; j++)
+		{
+			RB_Vec3f BottomVertex, TopVertex;
+
+			//底部の描画
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiBtmVertex, &BottomVertex);
+
+			//上部の描画
+			RB_Vec3f HemiTopPos;
+			RB_Vec3fAdd(CentralPos, CentralAxis, &HemiTopPos);
+			RB_VecRotateVec3f(Deg2Rad(15.0f * (float)j), &axis_uvec, &HemiTopVertex, &TopVertex);
+
+			RB_Vec3fAdd(CentralPos, &BottomVertex, &CapsuleBtmVtex[i][j]);
+			RB_Vec3fAdd(&HemiTopPos, &TopVertex, &CapsuleTopVtex[i][j]);
+		}
+	}
+
+	for(uint32_t i = 0u; i < 6u; i++)
+	{
+		for(uint32_t j = 0u; j < 12u; j++)
+		{
+
+			uint32_t k = j + 1u;
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleBtmVtex[i][j], 2u)  \
+			);
+			object_id++;
+
+			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+				depthorder fillcolor \"steelblue\" \n", \
+				object_id, \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][k], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i+1u][j], 2u), \
+				RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 0u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 1u),RB_Vec3fGetElem(&CapsuleTopVtex[i][j], 2u)  \
+			);
+			object_id++;
+		}
+	}
 }
 
 //x4
-RBSTATIC void CreateSemiCylinderStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
+RBSTATIC void CreateSemiCylinderStruct(uint32_t id, float objectsolid_val, RB_Vec3f *CentralRadius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
 {
+	//主軸に対する単位ベクトル
+	RB_Vec3f radius_uvec, axis_uvec;
+	RB_Vec3f TopX_Radius;
 
+	RB_Vec3f VertexTop[24u] = { 0.0f };
+	RB_Vec3f VertexBottom[24u] = { 0.0f };
+
+	uint32_t object_id = id;
+
+	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
+
+	for(uint32_t i = 0u; i < 24u; i++)
+	{
+		RB_Vec3f BottomVertex, TopVertex;
+
+		//底部の頂点を計算
+		RB_VecRotateVec3f(Deg2Rad(15.0f * (float)i), &axis_uvec, CentralRadius, &BottomVertex);
+
+		//上部の頂点を計算
+		RB_Vec3fAdd(CentralAxis, &BottomVertex, &TopVertex);
+
+		//上部, 底部の位置をworld座標系に反映し格納
+		RB_Vec3fAdd(CentralPos, &BottomVertex, &VertexBottom[i]);
+		RB_Vec3fAdd(CentralPos, &TopVertex, &VertexTop[i]);
+	}
+
+	//円柱側面
+	for(uint32_t i = 0u; i < 12; i++)
+	{
+		CreateCylinderPolygon(object_id, objectsolid_val, i, VertexBottom, VertexTop);
+		object_id++;
+	}
 }
 
 //x2
-RBSTATIC void CreateSideRectAngle(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralPos)
+RBSTATIC void CreateSideRectAngle(uint32_t id, float objectsolid_val, RB_Vec3f *RectAngle)
 {
-
+	uint32_t object_id = id;
+	fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		depthorder fillcolor \"steelblue\" \n", \
+			object_id, \
+			RB_Vec3fGetElem(&RectAngle[0u], 0u),RB_Vec3fGetElem(&RectAngle[0u], 1u),RB_Vec3fGetElem(&RectAngle[0u], 2u), \
+			RB_Vec3fGetElem(&RectAngle[1u], 0u),RB_Vec3fGetElem(&RectAngle[1u], 1u),RB_Vec3fGetElem(&RectAngle[1u], 2u), \
+			RB_Vec3fGetElem(&RectAngle[2u], 0u),RB_Vec3fGetElem(&RectAngle[2u], 1u),RB_Vec3fGetElem(&RectAngle[2u], 2u), \
+			RB_Vec3fGetElem(&RectAngle[3u], 0u),RB_Vec3fGetElem(&RectAngle[3u], 1u),RB_Vec3fGetElem(&RectAngle[3u], 2u), \
+			RB_Vec3fGetElem(&RectAngle[0u], 0u),RB_Vec3fGetElem(&RectAngle[0u], 1u),RB_Vec3fGetElem(&RectAngle[0u], 2u)  \
+		);
 }
 
 
-RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val, float radius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralWidth, RB_Vec3f *CentralPos)
+RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f *CentralRadius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralWidth, RB_Vec3f *CentralPos)
 {
 	uint32_t arrow_id = 1000u;
 	uint32_t object_id = id;
 
-	RB_Vec3f EndPosAxis, EndPosRadius, EndPosWidth, axis_uvec, radius_uvec;
-	RB_Vec3f RadiusVec, RadiusVertical;
+	RB_Vec3f EndPosAxis, EndPosWidth, EndPosRadius;
 
-	//オブジェクトの軸の単位ベクトルを作成
-	RB_Vec3fNormalize(CentralAxis, &axis_uvec);
-	RB_CalcVerticalVec3f(CentralAxis, &radius_uvec);
+//===============================================================
+//CentralPos, EndPosAxis, EndPosDiagonal, EndPosWidth
 
-//==========オブジェクトの半径ベクトルを作成
-	RB_Vec3fCreate(((radius)*(radius_uvec.e[0])), ((radius)*(radius_uvec.e[1])), ((radius)*(radius_uvec.e[2])), &RadiusVec);
-	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
-	RB_VecRotateVec3f(Deg2Rad(-90.0f), &axis_uvec, &RadiusVec, &RadiusVertical);
+	RB_Vec3f EndPosDiagonal, Diagonal;
+	RB_Vec3fAdd(CentralAxis, CentralWidth, &Diagonal);
+	RB_Vec3fAdd(CentralPos, &Diagonal, &EndPosDiagonal);
+	DevPlotArrow(arrow_id, "orange", CentralPos, &EndPosDiagonal );
+	arrow_id++;
 
-
-	CreateQuarterSphereStruct(object_id, objectsolid_val, CentralAxis, &RadiusVertical, CentralPos);
-
+//x
 	RB_Vec3fAdd(CentralPos, CentralAxis, &EndPosAxis);
 	DevPlotArrow(arrow_id, "spring-green", CentralPos, &EndPosAxis );
 	arrow_id++;
 
-//================================================================================
-	RB_Vec3fAdd(CentralPos, CentralWidth, &EndPosWidth);
-	DevPlotArrow(arrow_id, "magenta", CentralPos, &EndPosWidth );
+//y
+	RB_Vec3fAdd(CentralPos, CentralRadius, &EndPosRadius);
+	DevPlotArrow(arrow_id, "blue", CentralPos, &EndPosRadius );
 	arrow_id++;
 
-	RB_Vec3fAdd(CentralPos, &RadiusVertical, &EndPosRadius);
-	DevPlotArrow(arrow_id, "blue", CentralPos, &EndPosRadius );
+//z
+	RB_Vec3fAdd(CentralPos, CentralWidth, &EndPosWidth);
+	DevPlotArrow(arrow_id, "magenta", CentralPos, &EndPosWidth );
+
+
+	RB_Vec3f RectAngle_B[4u];
+	RB_Vec3f RectAngle_L[4u];
+	RB_Vec3f RectAngle_R[4u];
+
+	RectAngle_B[0u] = *CentralPos;
+	RectAngle_B[1u] = EndPosAxis;
+	RectAngle_B[2u] = EndPosDiagonal;
+	RectAngle_B[3u] = EndPosWidth;
+
+	RB_Vec3f Minus_CentralRadius;
+	RB_Vec3fSub(&f_RB_Vec3fzero, CentralRadius, &Minus_CentralRadius);
+
+	for(uint32_t i = 0u; i < 4u; i++)
+	{
+		RB_Vec3fAdd(&RectAngle_B[i], CentralRadius, &RectAngle_L[i]);
+		RB_Vec3fAdd(&RectAngle_B[i], &Minus_CentralRadius, &RectAngle_R[i]);
+	}
+
+
+	CreateSideRectAngle(object_id, objectsolid_val, RectAngle_L);
+	object_id++;
+	CreateSideRectAngle(object_id, objectsolid_val, RectAngle_R);
+	object_id++;
+
+	CreateQuarterSphereStruct(object_id, objectsolid_val, CentralWidth, CentralRadius, CentralPos);
+	object_id+= 144u;
+	CreateSemiCylinderStruct(object_id, objectsolid_val, CentralRadius, CentralWidth, CentralPos);
+	object_id+= 12u;
+	CreateSemiCylinderStruct(object_id, objectsolid_val, CentralRadius, CentralAxis, &EndPosWidth);
+	object_id+= 12u;
+
+	RB_Vec3f u_width, RotRadius;
+	RB_Vec3fNormalize(CentralWidth, &u_width);
+	RB_VecRotateVec3f(Deg2Rad(180.0f), &u_width, CentralRadius, &RotRadius);
+
+	CreateQuarterSphereStruct(object_id, objectsolid_val, CentralWidth, &RotRadius, &EndPosAxis);
+	object_id+= 144u;
+	CreateSemiCylinderStruct(object_id, objectsolid_val, &RotRadius, CentralWidth, &EndPosAxis);
+	object_id+= 12u;
+	CreateSemiCylinderStruct(object_id, objectsolid_val, &RotRadius, CentralAxis, CentralPos);
+	object_id+= 12u;
+
+
 }
 
 
@@ -541,13 +695,26 @@ RBSTATIC void DrawRoundBox(uint32_t id)
 	RB_Vec3f EndPos = RoundBox.EndPos;
 	RB_Vec3f WidthPos = RoundBox.WidthPos;
 
-	RB_Vec3f CentralAxis, CentralWidth;
+	RB_Vec3f CentralAxis, CentralWidth, CentralRadius;
 
 	//姿勢を中心軸に反映
 	RB_MulMatVec3f(&CenterRot, &EndPos, &CentralAxis);
 	RB_MulMatVec3f(&CenterRot, &WidthPos, &CentralWidth);
 
-	CreateRoundBoxStruct(object_id, objectsolid_val, Radius, &CentralAxis, &CentralWidth, &CenterPos);
+
+	RB_Vec3f RadiusVertical, RadiusArrow, u_axis, u_radius;
+	RB_Vec3fNormalize(&EndPos, &u_axis);
+	RB_CalcVerticalVec3f(&EndPos, &u_radius);
+
+	RB_Vec3fCreate(((Radius)*(u_radius.e[0])), ((Radius)*(u_radius.e[1])), ((Radius)*(u_radius.e[2])), &RadiusArrow);
+
+	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
+	
+	RB_VecRotateVec3f(Deg2Rad(-90.0f), &u_axis, &RadiusArrow, &RadiusVertical);
+
+	RB_MulMatVec3f(&CenterRot, &RadiusVertical, &CentralRadius);
+
+	CreateRoundBoxStruct(object_id, objectsolid_val, &CentralRadius, &CentralAxis, &CentralWidth, &CenterPos);
 }
 
 RBSTATIC void DrawBox(uint32_t id)
@@ -760,43 +927,41 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 
 		float Radius = SSV_obj->Radius;
 
-		RB_Vec3f RotVec, ArrowVec, Vertical, RadiusArrow;
-		RB_MulMatVec3f(m, &EndPos, &RotVec);
-		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
+		RB_Vec3f Axis, EndPosAxis;
+		RB_MulMatVec3f(m, &EndPos, &Axis);
+		RB_Vec3fAdd(v, &Axis, &EndPosAxis);
 
 		fprintf(plt_3d,"set colorsequence default\n");
 		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\' \n",\
 		arrow_num, \
 		v->e[0],v->e[1],v->e[2],\
-			(ArrowVec.e[0]),\
-			(ArrowVec.e[1]),\
-			(ArrowVec.e[2])\
+			(EndPosAxis.e[0]),\
+			(EndPosAxis.e[1]),\
+			(EndPosAxis.e[2])\
 		);//x
 
 		arrow_num++;
 
-		RB_Vec3f uvertical, RadiusVertical, u_axis;
+		RB_Vec3f RadiusArrow, RadiusVec, RadiusVertical, EndPosRadius, u_axis, u_radius;
 		RB_Vec3fNormalize(&EndPos, &u_axis);
+		RB_CalcVerticalVec3f(&EndPos, &u_radius);
 
-		RB_CalcVerticalVec3f(&EndPos, &Vertical);
-		RB_Vec3fNormalize(&Vertical, &uvertical);
-
-		RB_Vec3fCreate(((Radius)*(Vertical.e[0])), ((Radius)*(Vertical.e[1])), ((Radius)*(Vertical.e[2])), &RadiusArrow);
+		RB_Vec3fCreate(((Radius)*(u_radius.e[0])), ((Radius)*(u_radius.e[1])), ((Radius)*(u_radius.e[2])), &RadiusArrow);
 
 		//半径のベクトル(オフセット)を主軸を中心に-90deg回転
 		RB_VecRotateVec3f(Deg2Rad(-90.0f), &u_axis, &RadiusArrow, &RadiusVertical);
 
-		RB_MulMatVec3f(m, &RadiusVertical, &RotVec);
-		RB_Vec3fAdd(v, &RotVec, &ArrowVec);
+		RB_MulMatVec3f(m, &RadiusVertical, &RadiusVec);
+		RB_Vec3fAdd(v, &RadiusVec, &EndPosRadius);
 
 		fprintf(plt_3d,"set colorsequence default\n");
 		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\' \n",\
 		arrow_num, \
 		v->e[0],v->e[1],v->e[2],\
 	//=====================================
-			(ArrowVec.e[0]),\
-			(ArrowVec.e[1]),\
-			(ArrowVec.e[2])\
+			(EndPosRadius.e[0]),\
+			(EndPosRadius.e[1]),\
+			(EndPosRadius.e[2])\
 		);//x
 		arrow_num++;
 		arrow_num++;
