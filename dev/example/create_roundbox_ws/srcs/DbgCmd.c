@@ -336,14 +336,14 @@ RBSTATIC void ConfigRoundBoxObject(POSEDATA_T *Pose, float Radius, float Height,
 	{
 		RB_CalcVerticalVec3f(&axis[i], &axis_vertical[i]);
 	}
-
+#if 0
 	RB_Vec3fTermOut("axis_x_vertical", &axis_vertical[0u]);
 	RB_Vec3fTermOut("axis_y_vertical", &axis_vertical[1u]);
 	RB_Vec3fTermOut("axis_z_vertical", &axis_vertical[2u]);
 	RB_Vec3fTermOut("m_axis_x_vertical", &axis_vertical[3u]);
 	RB_Vec3fTermOut("m_axis_y_vertical", &axis_vertical[4u]);
 	RB_Vec3fTermOut("m_axis_z_vertical", &axis_vertical[5u]);
-
+#endif
 
 	RB_Vec3f uwidth, uaxis, WidthPos, Rot_WidthPos;
 
@@ -351,9 +351,11 @@ RBSTATIC void ConfigRoundBoxObject(POSEDATA_T *Pose, float Radius, float Height,
 	RB_CalcVerticalVec3f(EndPos, &uwidth);
 
 	RB_Vec3fCreate(((Height)*(uwidth.e[0])), ((Height)*(uwidth.e[1])), ((Height)*(uwidth.e[2])), &WidthPos);
+	RB_VecRotateVec3f(Deg2Rad(-90.0f), &uaxis, &WidthPos, &Rot_WidthPos);
+
 
 	roundbox_obj.Radius = Radius;
-	roundbox_obj.WidthPos = WidthPos;
+	roundbox_obj.WidthPos = Rot_WidthPos;
 	roundbox_obj.EndPos = *EndPos;
 
 	f_ObjectData[f_id].RoundBox = roundbox_obj;
@@ -367,7 +369,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f BoxSize;
 	RB_Vec3f Rel;
 
-#if 0
+#if 1
 	//シリンダー
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 00.0f, 0.0f, &Rel);
@@ -378,10 +380,21 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(-200.0f, 500.0f, 300.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
+	//ひし形
+	ConfigPose(-200.00f, 0.0f, 100.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 400.0f, 00.0f, &Rel);
+							//Radius, Width
+	ConfigRoundBoxObject(&Pose, 50.0f, 400.0f, &Rel);
+
+	//ひし形
+	ConfigPose(0.00f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(400.0f, 0.0f, 00.0f, &Rel);
+							//Radius, Width
+	ConfigRoundBoxObject(&Pose, 200.0f, 400.0f, &Rel);
 #endif
 	//ひし形
 	ConfigPose(0.00f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(800.0f, 0.0f, 00.0f, &Rel);
+	RB_Vec3fCreate(-800.0f, 0.0f, 00.0f, &Rel);
 							//Radius, Width
 	ConfigRoundBoxObject(&Pose, 100.0f, 400.0f, &Rel);
 
@@ -417,11 +430,13 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
 #endif
-#if 0
+#if 1
 	ConfigPose(-300.0f, -200.0f, 0.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 1u);
 
+#endif
+#if 0
 	ConfigPose(-500.0f, -500.0f, 0.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 2u);

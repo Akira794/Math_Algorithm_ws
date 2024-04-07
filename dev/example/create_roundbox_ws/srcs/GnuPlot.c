@@ -600,7 +600,6 @@ RBSTATIC void CreateSideRectAngle(uint32_t id, float objectsolid_val, RB_Vec3f *
 
 RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f *CentralRadius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralWidth, RB_Vec3f *CentralPos)
 {
-	uint32_t arrow_id = 1000u;
 	uint32_t object_id = id;
 
 	RB_Vec3f EndPosAxis, EndPosWidth, EndPosRadius;
@@ -611,22 +610,24 @@ RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f
 	RB_Vec3f EndPosDiagonal, Diagonal;
 	RB_Vec3fAdd(CentralAxis, CentralWidth, &Diagonal);
 	RB_Vec3fAdd(CentralPos, &Diagonal, &EndPosDiagonal);
-	DevPlotArrow(arrow_id, "orange", CentralPos, &EndPosDiagonal );
-	arrow_id++;
+
+//	uint32_t arrow_id = 1000u;
+//	DevPlotArrow(arrow_id, "orange", CentralPos, &EndPosDiagonal );
+//	arrow_id++;
 
 //x
 	RB_Vec3fAdd(CentralPos, CentralAxis, &EndPosAxis);
-	DevPlotArrow(arrow_id, "spring-green", CentralPos, &EndPosAxis );
-	arrow_id++;
+//	DevPlotArrow(arrow_id, "spring-green", CentralPos, &EndPosAxis );
+//	arrow_id++;
 
 //y
 	RB_Vec3fAdd(CentralPos, CentralRadius, &EndPosRadius);
-	DevPlotArrow(arrow_id, "blue", CentralPos, &EndPosRadius );
-	arrow_id++;
+//	DevPlotArrow(arrow_id, "blue", CentralPos, &EndPosRadius );
+//	arrow_id++;
 
 //z
 	RB_Vec3fAdd(CentralPos, CentralWidth, &EndPosWidth);
-	DevPlotArrow(arrow_id, "magenta", CentralPos, &EndPosWidth );
+//	DevPlotArrow(arrow_id, "magenta", CentralPos, &EndPosWidth );
 
 
 	RB_Vec3f RectAngle_B[4u];
@@ -674,10 +675,6 @@ RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f
 
 }
 
-
-
-
-
 RBSTATIC void DrawRoundBox(uint32_t id)
 {
 	float objectsolid_val = 0.3f;
@@ -708,9 +705,9 @@ RBSTATIC void DrawRoundBox(uint32_t id)
 
 	RB_Vec3fCreate(((Radius)*(u_radius.e[0])), ((Radius)*(u_radius.e[1])), ((Radius)*(u_radius.e[2])), &RadiusArrow);
 
-	//半径のベクトル(オフセット)を主軸を中心に-90deg回転
+	//半径のベクトル(オフセット)を主軸を中心に-180deg回転
 	
-	RB_VecRotateVec3f(Deg2Rad(-90.0f), &u_axis, &RadiusArrow, &RadiusVertical);
+	RB_VecRotateVec3f(Deg2Rad(-180.0f), &u_axis, &RadiusArrow, &RadiusVertical);
 
 	RB_MulMatVec3f(&CenterRot, &RadiusVertical, &CentralRadius);
 
@@ -901,6 +898,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 	{
 		SSV_T *SSV_obj;
 		RB_Vec3f EndPos;
+		RB_Vec3f WidthPos;
 		switch(ShapeType)
 		{
 			case 2u:
@@ -916,6 +914,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 			case 4u:
 				SSV_obj = &Object->RoundBox;
 				EndPos = SSV_obj->EndPos;
+				WidthPos = SSV_obj->WidthPos;
 				break;
 
 			default:
@@ -948,8 +947,8 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 
 		RB_Vec3fCreate(((Radius)*(u_radius.e[0])), ((Radius)*(u_radius.e[1])), ((Radius)*(u_radius.e[2])), &RadiusArrow);
 
-		//半径のベクトル(オフセット)を主軸を中心に-90deg回転
-		RB_VecRotateVec3f(Deg2Rad(-90.0f), &u_axis, &RadiusArrow, &RadiusVertical);
+		//半径のベクトル(オフセット)を主軸を中心に-180deg回転
+		RB_VecRotateVec3f(Deg2Rad(-180.0f), &u_axis, &RadiusArrow, &RadiusVertical);
 
 		RB_MulMatVec3f(m, &RadiusVertical, &RadiusVec);
 		RB_Vec3fAdd(v, &RadiusVec, &EndPosRadius);
@@ -964,6 +963,23 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 			(EndPosRadius.e[2])\
 		);//x
 		arrow_num++;
+
+		if(ShapeType == 4u)
+		{
+			RB_Vec3f Width, EndPosWidth;
+			RB_MulMatVec3f(m, &WidthPos, &Width);
+			RB_Vec3fAdd(v, &Width, &EndPosWidth);
+
+			fprintf(plt_3d,"set colorsequence default\n");
+			fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
+			arrow_num, \
+			v->e[0],v->e[1],v->e[2],\
+		//=====================================
+				(EndPosWidth.e[0]),\
+				(EndPosWidth.e[1]),\
+				(EndPosWidth.e[2])\
+			);//x
+		}
 		arrow_num++;
 
 		fprintf(plt_3d,"set colorsequence classic\n");

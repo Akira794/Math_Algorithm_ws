@@ -5,7 +5,7 @@
 #include "MainTypeDef.h"
 #include "RB_Math.h"
 
-#define OBJECT_MAXID 10u
+#define OBJECT_MAXID 20u
 
 #ifdef __cplusplus
 extern "C" {
