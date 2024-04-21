@@ -79,6 +79,7 @@ set(MAIN_SRCS
 	${SRCS_DIR}/DbgCmd.c
 	${SRCS_DIR}/Plot.c
 	${SRCS_DIR}/GnuPlot.c
+	${SRCS_DIR}/CollisionDet.c
 )
 
 set(LIB_SRCS

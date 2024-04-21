@@ -31,9 +31,9 @@ RBSTATIC uint8_t f_ThreadCmd;
 RBSTATIC uint32_t f_id = 0u;
 
 RBSTATIC void ShowCmdStatus(void);
-RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos);
-RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg);
-RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t step_pos, int32_t step_deg);
+RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, float step_pos);
+RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, float step_deg);
+RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, float step_pos, float step_deg);
 
 RBSTATIC void KeyCmdSwitch(char cmd);
 RBSTATIC void RequestLoopOut(void);
@@ -41,18 +41,37 @@ RBSTATIC void EventTrigger(void);
 
 //====================================================
 
-RBSTATIC void ShowCmdStatus(void)
+RBSTATIC RB_Vec3f f_DbgVec3f = { 0.0f };
+RBSTATIC char f_str[128];
+
+void DbgCmd_SetVec3f(RBCONST char *str, RBCONST RB_Vec3f *v)
 {
-	printf("-----------------------------------\n");	
+	uint32_t n = 0u;
+
+	while (str[n] != '\0')
+	{
+		f_str[n] = str[n];
+		n++;
+	}
+
+	f_DbgVec3f = *v;
 }
 
-RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, int32_t step_pos)
+RBSTATIC void ShowCmdStatus(void)
+{
+	printf("-----------------------------------\n");
+
+	//RB_Vec3fTermOut(f_str, &f_DbgVec3f);
+
+}
+
+RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, float step_pos)
 {
 	float NowPos_elem = f_ObjectData[id].CenterPos.e[elem];
 	RB_Vec3fSetElem(&(f_ObjectData[id].CenterPos), elem, (NowPos_elem + step_pos));
 }
 
-RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg)
+RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, float step_deg)
 {
 	float NowRPY_elem = f_RPY[id].e[elem];
 	RB_Mat3f Now_Rot = f_ObjectData[id].CenterRot;
@@ -84,7 +103,7 @@ RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, int32_t step_deg)
 
 }
 
-RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t step_pos, int32_t step_deg)
+RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, float step_pos, float step_deg)
 {
 	if(flag)
 	{
@@ -98,53 +117,73 @@ RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, int32_t ste
 
 RBSTATIC void KeyCmdSwitch(char cmd)
 {
-	static int32_t flag = 1;
-	float pos_step = 10.0f;
-	float deg_step = 5.0f;
+	static int32_t cmd_flag = 1;
+	static int32_t area_flag = 1;
+
+	static float pos_step = 10.0f;
+	static float deg_step = 5.0f;
 	static uint32_t id = 1u;
 
 	switch(cmd)
 	{
 		case 'c':
-			flag ^= 1;
+			cmd_flag ^= 1;
+			break;
+
+		case 'j':
+			area_flag ^= 1;
 			break;
 
 		case 'h':
 			break;
 
 		case 'w':
-			UpdateCmdPose(id, 0u, flag, pos_step, deg_step);
+			UpdateCmdPose(id, 0u, cmd_flag, pos_step, deg_step);
 
 			break;
 
 		case 's':
-			UpdateCmdPose(id, 0u, flag, -pos_step, -deg_step);
+			UpdateCmdPose(id, 0u, cmd_flag, -pos_step, -deg_step);
 
 			break;
 
 		case 'd':
-			UpdateCmdPose(id, 1u, flag, pos_step, deg_step);
+			UpdateCmdPose(id, 1u, cmd_flag, pos_step, deg_step);
 
 			break;
 
 		case 'a':
-			UpdateCmdPose(id, 1u, flag, -pos_step, -deg_step);
+			UpdateCmdPose(id, 1u, cmd_flag, -pos_step, -deg_step);
 
 			break;	
 
 		case 'k':
-			UpdateCmdPose(id, 2u, flag, pos_step, deg_step);
+			UpdateCmdPose(id, 2u, cmd_flag, pos_step, deg_step);
 
 			break;
 
 		case 'm':
-			UpdateCmdPose(id, 2u, flag, -pos_step, -deg_step);
+			UpdateCmdPose(id, 2u, cmd_flag, -pos_step, -deg_step);
 
 			break;
 
 		case '@':
 			f_ObjectData[id].TFMode ^= 1;
+			break;
 
+		case 'o':
+			pos_step = 0.1f;
+			deg_step = 0.1f;
+			break;
+
+		case 'i':
+			pos_step = 1.0f;
+			deg_step = 1.0f;
+			break;
+
+		case 'u':
+			pos_step = 10.0f;
+			deg_step = 5.0f;
 			break;
 
 		case '0':
@@ -160,6 +199,10 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 			if(cmd >= '0' && cmd <= '9')
 			{
 				id = (uint32_t)( cmd - '0');
+				if(!area_flag)
+				{
+					id += 10u;
+				}
 			}
 		break;
 		
@@ -189,8 +232,10 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 	}
 	printf("Input > %c\n", cmd);
 
+	printf("pos_step: %.3f, deg_step: %.3f\n", pos_step, deg_step);
+
 	printf("ID: %u\t", id);
-	if(flag)
+	if(cmd_flag)
 	{
 		printf("Mode: Pos X[+:w, -:s], Y[+:d, -:a], Z[+:k, -:m]\n");
 	}
@@ -253,6 +298,32 @@ RBSTATIC void ConfigPose(float x, float y, float z, uint8_t type, float deg, POS
 	}
 	RB_AxisRotateMat3f(&axis, Deg2Rad(deg), &Target_Rot);
 	Pose->CenterRot = Target_Rot;
+}
+
+RBSTATIC void ConfigBlockAreaObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t CenterType, uint8_t id)
+{
+	BOX_T box_obj = { 0 };
+
+	f_ObjectData[id].CenterPos = Pose->CenterPos;
+	f_ObjectData[id].CenterRot = Pose->CenterRot;
+
+	box_obj.BoxSize = *BoxSize;
+	box_obj.CenterType = CenterType;
+	f_ObjectData[id].ShapeType = 0u;
+	f_ObjectData[id].Box = box_obj;
+}
+
+RBSTATIC void ConfigWorkAreaObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t CenterType, uint8_t id)
+{
+	BOX_T box_obj = { 0 };
+
+	f_ObjectData[id].CenterPos = Pose->CenterPos;
+	f_ObjectData[id].CenterRot = Pose->CenterRot;
+
+	box_obj.BoxSize = *BoxSize;
+	box_obj.CenterType = CenterType;
+	f_ObjectData[id].ShapeType = 0u;
+	f_ObjectData[id].Box = box_obj;
 }
 
 RBSTATIC void ConfigBoxObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t CenterType)
@@ -344,7 +415,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f BoxSize;
 	RB_Vec3f Rel;
 
-#if 1
+#if 0
 	//シリンダー
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 00.0f, 0.0f, &Rel);
@@ -382,18 +453,22 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 #endif
-#if 0
+#if 1
 	//球体
-	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
+	ConfigPose(-300.0f, 0.0f, 200.0f, 0u, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 200.0f);
 
+	//球体
+	ConfigPose(300.0f, 500.0f, 200.0f, 0u, 0.0f, &Pose);
+	ConfigSphereObject(&Pose, 200.0f);
+#endif
+#if 0
 	//カプセル
-	ConfigPose(300.0f, 400.0f, 700.0f, 0u, 0.0f, &Pose);
+	ConfigPose(0.0f, 600.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
-#endif
-#if 1
-	ConfigPose(500.0f, 0.0f, 200.0f, 0u, 0.0f, &Pose);
+
+	ConfigPose(-800.0f, 0.0f, 400.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(200.0f, 200.0f, 200.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
 
@@ -423,6 +498,20 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &BoxSize);
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
+#if 1
+	ConfigPose(400.0f, 0.0f, 200.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(200.0f, 200.0f, 200.0f, &BoxSize);
+	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
+
+	ConfigPose(-400.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(200.0f, 200.0f, 200.0f, &BoxSize);
+	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 12u);
+#endif
+#if 0
+	ConfigPose(0.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(600.0f, 600.0f, 600.0f, &BoxSize);
+	ConfigWorkAreaObject(&Pose, &BoxSize, 0u, 12u);
+#endif
 
 	for(uint32_t id = 0; id < (uint32_t)OBJECT_MAXID; id++)
 	{
@@ -439,6 +528,8 @@ void DbgCmd_Init(void)
 	for(uint32_t i = 0; i < (uint32_t)OBJECT_MAXID; i++)
 	{
 		f_ObjectData[i].CenterRot = f_RB_Mat3fident;
+		f_ObjectData[i].ShapeType = 5u;
+		f_ObjectData[i].Overlap = false;
 	}
 
 	f_id = 1u;
@@ -462,6 +553,11 @@ void DbgCmd_Cycle(void)
 void DbgCmd_Destroy(void)
 {
 	KB_close();
+}
+
+void DbgCmd_SetOverlapStatus(uint32_t id, bool status)
+{
+	f_ObjectData[id].Overlap = status;
 }
 
 void DbgCmd_GetCmdStatus(DBGCMD_T *CmdSts)

@@ -44,6 +44,7 @@ typedef struct
 	RB_Mat3f CenterRot;
 	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:roundbox
 	bool TFMode;
+	bool Overlap;
 	BOX_T Box;
 	SSV_T Sphere;
 	SSV_T Capsule;
@@ -55,8 +56,13 @@ void DbgCmd_Init(void);
 void DbgCmd_PreStartProc(void);
 void DbgCmd_Cycle(void);
 void DbgCmd_Destroy(void);
+
+void DbgCmd_SetOverlapStatus(uint32_t id, bool status);
+
 void DbgCmd_GetCmdStatus(DBGCMD_T *CmdSts);
 void DbgCmd_Info(RBCONST char *str);
+void DbgCmd_SetVec3f(RBCONST char *str, RBCONST RB_Vec3f *v);
+
 void DbgCmd_GetPoseCmd(OBJECT_T *CmdPose);
 #ifdef DBG_INFO
 #define Dbg_Info(str) DbgCmd_Info(str)

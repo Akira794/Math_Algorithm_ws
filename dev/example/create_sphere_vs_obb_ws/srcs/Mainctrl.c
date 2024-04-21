@@ -3,6 +3,7 @@
 #include "MainCommon.h"
 #include "MainTypeDef.h"
 #include "DbgCmd.h"
+#include "CollisionDet.h"
 #include "Plot.h"
 #include <unistd.h>
 
@@ -24,6 +25,7 @@ RBSTATIC bool SimLoop(bool pause)
 	if(pause)
 	{
 		DbgCmd_Cycle();
+		CollisionDet_Cycle();
 		ret = true;
 	}
 	//=======draw===============
@@ -53,6 +55,8 @@ RBSTATIC bool IsLoopOut(void)
 void Mainctrl_Init(void)
 {
 	DbgCmd_Init();
+	CollisionDet_Init();
+
 	f_mctrl.endflag = false;
 	f_mctrl.engine_dt = 0.01f;
 	f_mctrl.output_dt = 0.5f;
@@ -61,6 +65,8 @@ void Mainctrl_Init(void)
 void Mainctrl_PreStartProc(void)
 {
 	DbgCmd_PreStartProc();
+	CollisionDet_PreStartProc();
+
 	Plot_Init();
 	Plot_PreStartProc();
 }
@@ -100,5 +106,6 @@ void Mainctrl_Destroy(void)
 {
 	Dbg_Info("Exit MainEngine");	
 	Plot_Destroy();
+	CollisionDet_Destroy();
 	DbgCmd_Destroy();
 }

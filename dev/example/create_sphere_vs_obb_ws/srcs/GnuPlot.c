@@ -77,37 +77,66 @@ RBSTATIC void ReservationObjectId(void)
 		id += add_id;
 		switch(ShapeType)
 		{
+			case 0u:
+				add_id = 6u;
+				break;
+
 			case 1u:
 				add_id = 288u;
-				printf("Sphere:\t");
 				break;
 
 			case 2u:
 				add_id = 312u;
-				printf("Capsule:\t");
 				break;
 
 			case 3u:
 				add_id = 26u;
-				printf("Cylinder:\t");
 				break;
 
 			case 4u:
 				add_id = 338u;
-				printf("RoundBox:\t");
 				break;
 
 			default:
-				add_id = 6u;
-				printf("Box:\t");
+				add_id = 0u;
 				break;
 		}
 		f_ObjectStartId[i] = id;
 	}
-	printf("\n");
+	printf("\n\n");
 	for(uint32_t n = 1u; n < (uint32_t)OBJECT_MAXID; n++)
 	{
-			printf("Id:%u >> startId: %u\n", n, f_ObjectStartId[n]);
+		uint8_t ShapeType = ObjectData[n].ShapeType;
+		printf("Id:%u >> startId: %u\t", n, f_ObjectStartId[n]);
+		
+
+				//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder
+		switch(ShapeType)
+		{
+			case 0u:
+				printf("Type:Box\n");
+				break;
+
+			case 1u:
+				printf("Type:Sphere\n");
+				break;
+
+			case 2u:
+				printf("Type:Capsule\n");
+				break;
+
+			case 3u:
+				printf("Type:Cylinder\n");
+				break;
+
+			case 4u:
+				printf("Type:RoundBox\n");
+				break;
+
+			default:
+				printf("Type:None\n");
+				break;
+		}
 	}
 }
 
@@ -704,6 +733,8 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+	bool OverlapId = ObjectData[id].Overlap;
+
 	BOX_T Box_obj = ObjectData[id].Box;
 	uint32_t object_id = f_ObjectStartId[id];
 	RB_Vec3f BoxInitArray[8u] = { 0.0f };
@@ -762,6 +793,28 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 		RB_Vec3fAdd(&ObjectData[id].CenterPos, &RotVec, &BoxVertex[i]);
 	}
 
+	char hit[10] = "red";
+	char none[10] = "#33AAAA";
+	char color[10];
+	uint32_t n = 0u;
+
+	if(OverlapId)
+	{
+		while (hit[n] != '\0')
+		{
+			color[n] = hit[n];
+			n++;
+		}
+	}
+	else
+	{
+		while (none[n] != '\0')
+		{
+			color[n] = none[n];
+			n++;
+		}
+	}
+
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \"#0918e6\" \n", \
@@ -775,59 +828,64 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u)  \
+		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
+		color
 	);
 	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u)  \
+		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
+		color
 	);
 	object_id++;
 
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u)  \
+		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
+		color
 	);
 	object_id++;
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u)  \
+		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
+		color
 	);
 	object_id++;
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \"#33AAAA\" \n", \
+		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u)  \
+		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
+		color
 	);
 }
 
@@ -840,41 +898,49 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 
 	uint8_t ShapeType = Object->ShapeType;
 
-	if(ShapeType == 0u) 
+	if(ShapeType == 0u)
 	{
-		BOX_T *Box_obj = &Object->Box;
-		RB_Vec3f *l = &Box_obj->BoxSize;
+		//監視対象のオブジェクト数を増やす場合は要改修
+		if(id > 10)
+		{
+			arrow_num+=3u;
+		}
+		else
+		{
+			BOX_T *Box_obj = &Object->Box;
+			RB_Vec3f *l = &Box_obj->BoxSize;
 
-		fprintf(plt_3d,"set colorsequence default\n");
-		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
-		arrow_num, \
-		v->e[0],v->e[1],v->e[2],\
-	//=====================================
-		(v->e[0u] + l->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
-		(v->e[1u] + l->e[0u] * RB_Mat3fGetElem(m, 1u, 0u)),\
-		(v->e[2u] + l->e[0u] * RB_Mat3fGetElem(m, 2u, 0u))\
-		);
-		arrow_num++;
+			fprintf(plt_3d,"set colorsequence default\n");
+			fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'spring-green\' \n",\
+			arrow_num, \
+			v->e[0],v->e[1],v->e[2],\
+		//=====================================
+			(v->e[0u] + l->e[0u] * RB_Mat3fGetElem(m, 0u, 0u)),\
+			(v->e[1u] + l->e[0u] * RB_Mat3fGetElem(m, 1u, 0u)),\
+			(v->e[2u] + l->e[0u] * RB_Mat3fGetElem(m, 2u, 0u))\
+			);
+			arrow_num++;
 
-		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\'  \n",\
-		arrow_num, \
-		v->e[0],v->e[1],v->e[2],\
-	//=====================================
-		(v->e[0u] + l->e[1u] * RB_Mat3fGetElem(m, 0u, 1u)),\
-		(v->e[1u] + l->e[1u] * RB_Mat3fGetElem(m, 1u, 1u)),\
-		(v->e[2u] + l->e[1u] * RB_Mat3fGetElem(m, 2u, 1u))\
-		);
-		arrow_num++;
+			fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'cyan\'  \n",\
+			arrow_num, \
+			v->e[0],v->e[1],v->e[2],\
+		//=====================================
+			(v->e[0u] + l->e[1u] * RB_Mat3fGetElem(m, 0u, 1u)),\
+			(v->e[1u] + l->e[1u] * RB_Mat3fGetElem(m, 1u, 1u)),\
+			(v->e[2u] + l->e[1u] * RB_Mat3fGetElem(m, 2u, 1u))\
+			);
+			arrow_num++;
 
-		fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\'  \n",\
-		arrow_num, \
-		v->e[0],v->e[1],v->e[2],\
-	//=====================================
-		(v->e[0u] + l->e[2u] * RB_Mat3fGetElem(m, 0u, 2u)),\
-		(v->e[1u] + l->e[2u] * RB_Mat3fGetElem(m, 1u, 2u)),\
-		(v->e[2u] + l->e[2u] * RB_Mat3fGetElem(m, 2u, 2u))\
-		);	
-		fprintf(plt_3d,"set colorsequence classic\n");
+			fprintf(plt_3d,"set arrow %u from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f front lw 2 lt rgbcolor \'orange\'  \n",\
+			arrow_num, \
+			v->e[0],v->e[1],v->e[2],\
+		//=====================================
+			(v->e[0u] + l->e[2u] * RB_Mat3fGetElem(m, 0u, 2u)),\
+			(v->e[1u] + l->e[2u] * RB_Mat3fGetElem(m, 1u, 2u)),\
+			(v->e[2u] + l->e[2u] * RB_Mat3fGetElem(m, 2u, 2u))\
+			);	
+			fprintf(plt_3d,"set colorsequence classic\n");
+		}
 	}
 	else
 	{
@@ -978,6 +1044,10 @@ RBSTATIC void DrawObject3d(void)
 	{
 		switch((ObjectData[id].ShapeType))
 		{
+			case 0u:
+				DrawBox(id, objectsolid_val);
+				break;
+
 			case 1u:
 				DrawSphere(id, objectsolid_val);
 				break;
@@ -995,7 +1065,7 @@ RBSTATIC void DrawObject3d(void)
 				break;
 
 			default:
-				DrawBox(id, objectsolid_val);
+				NO_STATEMENT;
 				break;
 		}
 	}
@@ -1012,13 +1082,6 @@ RBSTATIC void DrawObjectArrow(void)
 		DrawObjectSizeArrow(i, &ObjectData[i]);
 	}
 
-}
-
-RBSTATIC void ColorConfig(void)
-{
-	fprintf(plt_3d,"set xyplane 0        # \'set ticslevel 0\' is obsolute \n");
-	//fprintf(plt_3d,"set palette defined (0 \"dark-blue\", 1 \"light-blue\") \n");
-	fprintf(plt_3d,"set palette defined (0 \"steelblue\", 1 \"steelblue\") \n");
 }
 
 RBSTATIC void UnsetConfig(void)
@@ -1142,7 +1205,7 @@ void GnuPlot_PreStartProc(void)
 {
 //1回の設定で済むものたち
 	DrawWorldCoordinateSys();
-	ColorConfig();
+
 	UnsetConfig();
 	SetConfig();
 	DrawGround(0.0f);
