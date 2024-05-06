@@ -6,6 +6,7 @@
 #include "RB_Math.h"
 
 #define OBJECT_MAXID 20u
+#define SEGMENT_MAXID 128u
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,12 @@ typedef struct
 	SSV_T RoundBox;
 }OBJECT_T;
 
+typedef struct
+{
+	RB_Vec3f StPos;
+	RB_Vec3f EdPos;
+}SEGMENT_T;
+
 void DbgCmd_Init(void);
 void DbgCmd_PreStartProc(void);
 void DbgCmd_Cycle(void);
@@ -62,6 +69,9 @@ void DbgCmd_SetOverlapStatus(uint32_t id, bool status);
 void DbgCmd_GetCmdStatus(DBGCMD_T *CmdSts);
 void DbgCmd_Info(RBCONST char *str);
 void DbgCmd_SetVec3f(RBCONST char *str, RBCONST RB_Vec3f *v);
+
+void DbgCmd_SetSegment(uint32_t id, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end);
+void DbgCmd_GetSegment(SEGMENT_T *Segments);
 
 void DbgCmd_GetPoseCmd(OBJECT_T *CmdPose);
 #ifdef DBG_INFO

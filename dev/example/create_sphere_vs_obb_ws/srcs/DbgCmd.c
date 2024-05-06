@@ -6,7 +6,6 @@
 RBSTATIC DBGCMD_T f_CommandStatus;
 RBSTATIC RB_Vec3f f_RPY[OBJECT_MAXID] = { 0.0f };
 
-//正式版
 RBSTATIC OBJECT_T f_ObjectData[OBJECT_MAXID] = { 0.0f };
 
 typedef struct
@@ -44,6 +43,8 @@ RBSTATIC void EventTrigger(void);
 RBSTATIC RB_Vec3f f_DbgVec3f = { 0.0f };
 RBSTATIC char f_str[128];
 
+RBSTATIC SEGMENT_T f_SegmentArray[SEGMENT_MAXID] = { 0.0f };
+
 void DbgCmd_SetVec3f(RBCONST char *str, RBCONST RB_Vec3f *v)
 {
 	uint32_t n = 0u;
@@ -61,7 +62,7 @@ RBSTATIC void ShowCmdStatus(void)
 {
 	printf("-----------------------------------\n");
 
-	//RB_Vec3fTermOut(f_str, &f_DbgVec3f);
+	RB_Vec3fTermOut(f_str, &f_DbgVec3f);
 
 }
 
@@ -135,6 +136,15 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 			break;
 
 		case 'h':
+			printf("\n[key map]===============================\n");
+			printf("c: translation <-or-> rotation\n");
+			printf("j: MonObject(1〜) <-or-> AreaObject(11〜)\n");
+			printf("@: view CoordinateSys\n");
+			printf("( pos ) o: 0.1mm, i: 1.0mm, u: 10mm\n");
+			printf("(angle) o: 0.1deg, i: 1.0deg, u: 5.0deg\n");
+			printf("p: SetPose, l: LoadPose\n");
+			printf("x: Reset\n");
+			printf("=======================================\n\n");
 			break;
 
 		case 'w':
@@ -242,6 +252,15 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 	else
 	{
 		printf("Mode: Rot Roll[+:w, -:s], Pitch[+:d, -:a], Yaw[+:k, -:m]\n");
+	}
+
+	if(area_flag)
+	{
+		printf("Mode: Object \n");
+	}
+	else
+	{
+		printf("Mode: Work Area or Block Area \n");
 	}
 
 	if(f_ObjectData[id].TFMode)
@@ -416,6 +435,19 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f Rel;
 
 #if 0
+	//カプセル
+	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, 300.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 150.0f, &Rel);
+#endif
+
+#if 0
+	//ひし形
+	ConfigPose(-200.00f, 0.0f, 100.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 400.0f, 00.0f, &Rel);
+							//Radius, Width
+	ConfigRoundBoxObject(&Pose, 50.0f, 400.0f, &Rel);
+
 	//シリンダー
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 00.0f, 0.0f, &Rel);
@@ -452,6 +484,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
+
 #endif
 #if 1
 	//球体
@@ -461,8 +494,10 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//球体
 	ConfigPose(300.0f, 500.0f, 200.0f, 0u, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 200.0f);
+
 #endif
 #if 0
+
 	//カプセル
 	ConfigPose(0.0f, 600.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, -500.0f, &Rel);
@@ -503,11 +538,15 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(200.0f, 200.0f, 200.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
 
-	ConfigPose(-400.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
+	ConfigPose(-400.0f, 0.0f, 700.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(200.0f, 200.0f, 200.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 12u);
+
 #endif
 #if 0
+
+//===============
+
 	ConfigPose(0.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(600.0f, 600.0f, 600.0f, &BoxSize);
 	ConfigWorkAreaObject(&Pose, &BoxSize, 0u, 12u);
@@ -573,4 +612,17 @@ void DbgCmd_Info(RBCONST char *str)
 void DbgCmd_GetPoseCmd(OBJECT_T *Object)
 {
 	memcpy((void*)Object, (void*)&f_ObjectData, sizeof(OBJECT_T) * (uint32_t)OBJECT_MAXID);
+}
+
+void DbgCmd_SetSegment(uint32_t id, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end)
+{
+	RBAssert(id < (uint32_t)OBJECT_MAXID);
+
+	RB_Vec3fCreate(start->e[0u], start->e[1u], start->e[2u], &(f_SegmentArray[id].StPos));
+	RB_Vec3fCreate(end->e[0u], end->e[1u], end->e[2u], &(f_SegmentArray[id].EdPos));
+}
+
+void DbgCmd_GetSegment(SEGMENT_T *Segments)
+{
+	memcpy((void*)Segments, (void*)&f_SegmentArray, sizeof(SEGMENT_T) * (uint32_t)SEGMENT_MAXID);
 }

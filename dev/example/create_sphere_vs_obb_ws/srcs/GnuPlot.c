@@ -9,6 +9,7 @@ RBSTATIC int32_t f_plot_width = 1000;
 RBSTATIC RBCONST RB_Vec3f f_RB_Vec3fzero = { { 0.0f, 0.0f, 0.0f} };
 RBSTATIC RBCONST RB_Mat3f f_RB_Mat3fident = { { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } } };
 RBSTATIC uint32_t f_ObjectStartId[OBJECT_MAXID] = { 0u };
+RBSTATIC uint32_t f_PlotArrowId = 0u;
 
 RBSTATIC void ReservationObjectId(void);
 RBSTATIC void DrawGround(float z);
@@ -202,7 +203,7 @@ RBSTATIC void CreateSphereStruct(uint32_t id, float objectsolid_val, RB_Vec3f *C
 		for(uint32_t j = 0u; j < 24u; j++)
 		{
 			uint32_t k = (j == 23u) ? 0u : (j + 1u);
-			fprintf(plt_3d, "set style fill transparent solid %f \n", 0.3f);
+			fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 			fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 				depthorder fillcolor \"steelblue\" \n", \
 				object_id, \
@@ -1032,6 +1033,8 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 
 		fprintf(plt_3d,"set colorsequence classic\n");
 	}
+	
+	f_PlotArrowId = arrow_num;
 }
 
 RBSTATIC void DrawObject3d(void)
@@ -1077,9 +1080,21 @@ RBSTATIC void DrawObjectArrow(void)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+	f_PlotArrowId = 0u;
+
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
 		DrawObjectSizeArrow(i, &ObjectData[i]);
+	}
+
+	//TODO
+	SEGMENT_T SegmentData[SEGMENT_MAXID];
+	DbgCmd_GetSegment(SegmentData);	
+
+	for(uint32_t i = 1u; i < (uint32_t)SEGMENT_MAXID; i++)
+	{
+		DevPlotArrow(f_PlotArrowId, "orange-red", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+		f_PlotArrowId++;
 	}
 
 }
