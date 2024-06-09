@@ -6,6 +6,12 @@
 #include <math.h>
 
 RBSTATIC uint32_t f_SegmentId = 0u;
+RBSTATIC RBCONST float f_eps = 1E-05f;
+
+RBSTATIC float Clamp(float val, float min_val, float max_val)
+{
+	return RB_max(min_val, (RB_min(val, max_val)));
+}
 
 //WCS(p)から見たOBBの最近接点を取得
 //WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
@@ -83,7 +89,7 @@ RBSTATIC bool Sphere_vs_OBB(uint32_t area_id, uint32_t mon_id)
 #if 1
 	//最近接点から球体中心までのベクトルを描画
 	f_SegmentId++;
-	DbgCmd_SetSegment(f_SegmentId, &wcs_q, &(ObjectData[mon_id].CenterPos));
+	DbgCmd_SetSegment(f_SegmentId, 3u, &wcs_q, &(ObjectData[mon_id].CenterPos));
 
 	//DbgCmd_SetVec3f("nearest neighbor point: ", &wcs_q);
 #endif
@@ -190,7 +196,7 @@ RBSTATIC bool ClosestPt_OBBCenterPos_Segment(uint32_t area_id, uint32_t mon_id)
 	f_SegmentId++;
 
 	//Box中心からカプセル上の点に最も近い点までのベクトルを描画
-	DbgCmd_SetSegment(f_SegmentId, &(ObjectData[area_id].CenterPos), &d);
+	DbgCmd_SetSegment(f_SegmentId, 3u, &(ObjectData[area_id].CenterPos), &d);
 #endif
 }
 
@@ -227,7 +233,7 @@ RBSTATIC void CalcPosInLCS(uint32_t area_id, RBCONST RB_Vec3f *wcs_pos, RB_Vec3f
 	}
 
 //	f_SegmentId++;
-//	DbgCmd_SetSegment(f_SegmentId, &v_pos, wcs_pos);
+//	DbgCmd_SetSegment(f_SegmentId, 0u, &v_pos, wcs_pos);
 }
 
 //確認: BoxのLCSから見たカプセルの位置を描画
@@ -250,8 +256,148 @@ RBSTATIC void Dbg_LCSPos(uint32_t area_id, uint32_t mon_id)
 
 	f_SegmentId++;
 	//LCSから見たカプセルの始点・終点を描画
-	DbgCmd_SetSegment(f_SegmentId, &lcs_StPos, &lcs_EdPos);
+	DbgCmd_SetSegment(f_SegmentId, 1u, &lcs_StPos, &lcs_EdPos);
 #endif
+}
+
+//線分と線分の最短距離
+RBSTATIC float ClosestPt_SegmentSegment(RB_Vec3f *st1, RB_Vec3f *ed1, RB_Vec3f *st2, RB_Vec3f *ed2,
+float *L1s, float *L2t, RB_Vec3f *L1c, RB_Vec3f *L2c)
+{
+	RB_Vec3f d1, d2, r;
+
+	RB_Vec3fSub(ed1, st1, &d1);	//線分S1の方向ベクトル
+	RB_Vec3fSub(ed2, st2, &d2);	//線分S2の方向ベクトル
+	RB_Vec3fSub(st1, st2, &r);
+
+	float a = RB_Vec3fDot(&d1, &d1); //線分S1の距離の平方
+	float e = RB_Vec3fDot(&d2, &d2); //線分S2の距離の平方
+	float f = RB_Vec3fDot(&d2, &r);
+
+	float s = 0.0f, t = 0.0f;
+	RB_Vec3f *c1, *c2;
+
+	//片方あるいは両方の線分が点に縮退してるかチェック
+	if( (a <= f_eps ) && (e <= f_eps))
+	{
+		//両方の線分が点に縮退
+		s = t = 0.0f;
+
+		RB_Vec3f rel;
+		RB_Vec3fSub(st1, st2, &rel);
+		*L1s = s;
+		*L2t = t;
+		L1c = st1;
+		L2c = st2;
+		//TODO 要returnロジックの修正
+		return RB_Vec3fDot(&rel, &rel);
+	}
+
+	//最初の線分が点に縮退
+	if( a <= f_eps)
+	{
+		s = 0.0f;
+		t = f / e; // s = 0 => t = ( b * s + f) / e = f / e
+		t = Clamp(t, 0.0f, 1.0f);
+	}
+	else
+	{
+		float c = RB_Vec3fDot(&d1, &r);
+
+		if(e <= f_eps)
+		{
+			//2番目の線分が点に縮退
+			t = 0.0f;
+			s = Clamp( ((-c) / a), 0.0f, 1.0f ); //t = 0 => s = (b * t - c) / a = -c / a
+		}
+		//ここから一般的な縮退の場合を開始
+		else
+		{
+			float b = RB_Vec3fDot(&d1, &d2);
+
+			float denom = a * e - b * b; //常に非負
+
+			//線分が並行でない場合、L1上のL2に対する最近接点を計算。
+			//そして線分S1に対してクランプ。そうでない場合は任意s(ここでは0)を選択
+			if(denom != 0.0f)
+			{
+				s = Clamp( (b * f - c * e) / denom, 0.0f, 1.0f);
+			}
+			else
+			{
+				s = 0.0f;
+			}
+			//L2上のS1(s)に対する最近接点を以下を用いて計算
+			//t = Dot((P1 + D1 * s) - P2, D2) / Dot(D2, D2) = (b * s + f) / e
+			t = ( b * s + f) / e;
+
+			//tが[0, 1]の中にあれば終了。そうでなければtをクランプ、sをtの新しい値に対して以下を用いて再計算
+
+			//s = Dot((P2 + D2 * t) - P1, D1) / Dot(D1, D1) = (t + b - c) / a
+			//そしてsを[0, 1]に対してクランプ
+			if( t < 0.0f)
+			{
+				t = 0.0f;
+				s = Clamp( ((-c) / a ), 0.0f, 1.0f);
+			}
+			else if( t > 1.0f)
+			{
+				t = 1.0f;
+				s = Clamp( ((b - c) / a), 0.0f, 1.0f);
+			}
+			else
+			{
+				NO_STATEMENT;
+			}
+		}
+	}
+
+	RB_Vec3f d1s, d2t;
+	for(uint8_t i = 0u; i < 3u; i++)
+	{
+		d1s.e[i] = d1.e[i] * s;
+		d2t.e[i] = d2.e[i] * t;
+	}
+
+	RB_Vec3f Sc1, Sc2;
+	RB_Vec3fAdd(st1, &d1s, &Sc1);
+	RB_Vec3fAdd(st2, &d2t, &Sc2);
+
+	RB_Vec3f rel;
+	RB_Vec3fSub(&Sc1, &Sc2, &rel);
+	*L1s = s;
+	*L2t = t;
+	*L1c = Sc1;
+	*L2c = Sc2;
+	return RB_Vec3fDot(&rel, &rel);
+}
+
+//カプセル vs カプセル 当たり判定
+RBSTATIC bool CollDetCapsule_vs_Capsule(uint32_t capsule_1, uint32_t capsule_2)
+{
+	float R1, R2;
+	RB_Vec3f C1St, C2St, C1Ed, C2Ed;
+	
+	GetCapsuleData(capsule_1, &C1St, &C1Ed, &R1);
+	GetCapsuleData(capsule_2, &C2St, &C2Ed, &R2);
+
+	float t1, t2;
+	RB_Vec3f p1, p2;
+	float dSq = ClosestPt_SegmentSegment(&C1St, &C1Ed, &C2St, &C2Ed, &t1, &t2, &p1, &p2);
+
+#if 1
+	//最近接点から球体中心までのベクトルを描画
+	f_SegmentId++;
+	DbgCmd_SetSegment( f_SegmentId, 1u, &p1, &p2);
+
+#endif
+
+	bool ret = false;
+	if( dSq <= ((R1 + R2) * (R1 + R2)))
+	{
+		ret = true;
+	}
+	return ret;
 }
 
 
@@ -272,8 +418,13 @@ void CollisionDet_Cycle(void)
 {
 	bool colldet_result[SEGMENT_MAXID] = { 1u };
 
-	Dbg_LCSPos(11u, 1u);
-	Dbg_LCSPos(12u, 1u);
+	if(CollDetCapsule_vs_Capsule(1u, 2u))
+	{
+		printf("<INFO>: Hit!\n");
+	}
+
+//	Dbg_LCSPos(11u, 1u);
+//	Dbg_LCSPos(12u, 1u);
 
 //	ClosestPt_OBBCenterPos_Segment(11u, 1u);
 //	ClosestPt_OBBCenterPos_Segment(12u, 1u);

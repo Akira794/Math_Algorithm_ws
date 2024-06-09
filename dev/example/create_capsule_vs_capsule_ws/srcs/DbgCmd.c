@@ -75,33 +75,23 @@ RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, float step_pos)
 RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, float step_deg)
 {
 	float NowRPY_elem = f_RPY[id].e[elem];
-	RB_Mat3f Now_Rot = f_ObjectData[id].CenterRot;
-	RB_Mat3f Target_Rot;
-	RB_Vec3f axis;
-	
-	switch(elem)
-	{
-		case 0:
-			RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &axis);
-			break;
 
-		case 1:
-			RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &axis);
-			break;
+	RB_Mat3f Target_Roll, Target_Pitch,  Target_Yaw;
+	RB_Mat3f Target_YawPitch;
+	RB_Vec3f axis, Ex, Ey, Ez;
 
-		case 2:
-			RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &axis);
-			break;
+	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &Ex);
+	RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &Ey);
+	RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &Ez);
 
-		default:
-			RB_Vec3fCreate(0.0f, 0.0f, 0.0f, &axis);
-			break;
-	}
-	RB_AxisRotateMat3f(&axis, Deg2Rad(step_deg), &Target_Rot);
-	//姿勢情報の更新
-	f_RPY[id].e[elem] = NowRPY_elem + step_deg;
-	RB_MulMatMat3f(&Target_Rot, &Now_Rot, &(f_ObjectData[id].CenterRot));
+	f_RPY[id].e[elem] += step_deg;
 
+	RB_AxisRotateMat3f(&Ex, Deg2Rad(f_RPY[id].e[0u]), &Target_Roll );
+	RB_AxisRotateMat3f(&Ey, Deg2Rad(f_RPY[id].e[1u]), &Target_Pitch );
+	RB_AxisRotateMat3f(&Ez, Deg2Rad(f_RPY[id].e[2u]), &Target_Yaw );
+
+	RB_MulMatMat3f(&Target_Yaw, &Target_Pitch, &Target_YawPitch);
+	RB_MulMatMat3f(&Target_YawPitch, &Target_Roll, &(f_ObjectData[id].CenterRot));
 }
 
 RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, float step_pos, float step_deg)
@@ -147,22 +137,22 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 			printf("=======================================\n\n");
 			break;
 
-		case 'w':
+		case 'd':
 			UpdateCmdPose(id, 0u, cmd_flag, pos_step, deg_step);
 
 			break;
 
-		case 's':
+		case 'a':
 			UpdateCmdPose(id, 0u, cmd_flag, -pos_step, -deg_step);
 
 			break;
 
-		case 'd':
+		case 'w':
 			UpdateCmdPose(id, 1u, cmd_flag, pos_step, deg_step);
 
 			break;
 
-		case 'a':
+		case 's':
 			UpdateCmdPose(id, 1u, cmd_flag, -pos_step, -deg_step);
 
 			break;	
@@ -247,11 +237,11 @@ RBSTATIC void KeyCmdSwitch(char cmd)
 	printf("ID: %u\t", id);
 	if(cmd_flag)
 	{
-		printf("Mode: Pos X[+:w, -:s], Y[+:d, -:a], Z[+:k, -:m]\n");
+		printf("Mode: Pos X[+:d, -:a], Y[+:w, -:s], Z[+:k, -:m]\n");
 	}
 	else
 	{
-		printf("Mode: Rot Roll[+:w, -:s], Pitch[+:d, -:a], Yaw[+:k, -:m]\n");
+		printf("Mode: Rot Roll[+:d, -:a], Pitch[+:w, -:s], Yaw[+:k, -:m]\n");
 	}
 
 	if(area_flag)
@@ -438,7 +428,12 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//カプセル
 	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, 300.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 150.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//カプセル
+	ConfigPose(0.0f, -300.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(300.0f, 0.0f, 0.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 #endif
 
 #if 0
@@ -534,6 +529,13 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
 #if 1
+	ConfigPose(0.0f, 0.0f, 800.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.01f, 0.01f, 0.01f, &BoxSize);
+	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
+
+#endif
+#if 0
+
 	ConfigPose(400.0f, 0.0f, 200.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 200.0f, 300.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
@@ -542,8 +544,6 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(100.0f, 400.0f, 600.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 12u);
 
-#endif
-#if 0
 
 //===============
 
@@ -614,9 +614,11 @@ void DbgCmd_GetPoseCmd(OBJECT_T *Object)
 	memcpy((void*)Object, (void*)&f_ObjectData, sizeof(OBJECT_T) * (uint32_t)OBJECT_MAXID);
 }
 
-void DbgCmd_SetSegment(uint32_t id, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end)
+void DbgCmd_SetSegment(uint32_t id, RBCONST uint8_t colorid, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end)
 {
 	RBAssert(id < (uint32_t)OBJECT_MAXID);
+
+	f_SegmentArray[id].ColorId = colorid;
 
 	RB_Vec3fCreate(start->e[0u], start->e[1u], start->e[2u], &(f_SegmentArray[id].StPos));
 	RB_Vec3fCreate(end->e[0u], end->e[1u], end->e[2u], &(f_SegmentArray[id].EdPos));

@@ -55,6 +55,7 @@ typedef struct
 
 typedef struct
 {
+	uint8_t ColorId;
 	RB_Vec3f StPos;
 	RB_Vec3f EdPos;
 }SEGMENT_T;
@@ -70,7 +71,7 @@ void DbgCmd_GetCmdStatus(DBGCMD_T *CmdSts);
 void DbgCmd_Info(RBCONST char *str);
 void DbgCmd_SetVec3f(RBCONST char *str, RBCONST RB_Vec3f *v);
 
-void DbgCmd_SetSegment(uint32_t id, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end);
+void DbgCmd_SetSegment(uint32_t id, RBCONST uint8_t colorid, RBCONST RB_Vec3f *start, RBCONST RB_Vec3f *end);
 void DbgCmd_GetSegment(SEGMENT_T *Segments);
 
 void DbgCmd_GetPoseCmd(OBJECT_T *CmdPose);

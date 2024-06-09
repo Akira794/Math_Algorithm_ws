@@ -7,6 +7,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define RB_min(a,b)   ( (a) < (b) ? (a) : (b) )
+#define RB_max(a,b)   ( (a) > (b) ? (a) : (b) )
+
 // 3次元ベクトル
 typedef struct
 {

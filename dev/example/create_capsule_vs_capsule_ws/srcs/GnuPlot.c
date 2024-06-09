@@ -1093,7 +1093,26 @@ RBSTATIC void DrawObjectArrow(void)
 
 	for(uint32_t i = 1u; i < (uint32_t)SEGMENT_MAXID; i++)
 	{
-		DevPlotArrow(f_PlotArrowId, "orange-red", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+		//DevPlotArrow(f_PlotArrowId, "orange-red", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+		switch(SegmentData[i].ColorId)
+		{
+			case 0u:
+				DevPlotArrow(f_PlotArrowId, "dark-cyan", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+			case 1u:
+				DevPlotArrow(f_PlotArrowId, "royalblue", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+			case 2u:
+				DevPlotArrow(f_PlotArrowId, "magenta", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+			default:
+				DevPlotArrow(f_PlotArrowId, "black", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+		}
 		f_PlotArrowId++;
 	}
 
