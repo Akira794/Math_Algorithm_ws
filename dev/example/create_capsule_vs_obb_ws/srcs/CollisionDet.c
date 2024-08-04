@@ -71,6 +71,42 @@ RBSTATIC void ClosestPtPointOBB( RBCONST RB_Vec3f *p, RBCONST OBJECT_T *Object, 
 
 //Sphere vs OBB
 //TODO 複数の当たり判定に対応する必要あり
+RBSTATIC bool CollDetSphere_vs_OBB_Unit(RB_Vec3f *CPos, float Radius, uint32_t area_id, uint8_t ColorId)
+{
+	bool ret = false;
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	RB_Vec3f wcs_q;
+	RB_Vec3f rel_q;
+
+	//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
+	ClosestPtPointOBB( CPos, &ObjectData[area_id], &wcs_q);
+
+#if 1
+	//最近接点から球体中心までのベクトルを描画
+	f_SegmentId++;
+	DbgCmd_SetSegment(f_SegmentId, ColorId, &wcs_q, CPos);
+
+	//DbgCmd_SetVec3f("nearest neighbor point: ", &wcs_q);
+#endif
+
+	//最近接点wcs_qと相対距離ベクトルrel_qを計算
+	RB_Vec3fSub(&wcs_q, CPos, &rel_q);
+
+	//相対距離ベクトル rel_q を2乗し、大きさを求める
+	//それが半径の2乗以下ならOBBに球体が接触していると判定
+	if(RB_Vec3fDot(&rel_q,&rel_q) <= (Radius * Radius))
+	{
+		ret = true;
+	}
+
+	return ret;
+}
+
+#if 1
+//Sphere vs OBB
+//TODO 複数の当たり判定に対応する必要あり
 RBSTATIC bool CollDetSphere_vs_OBB(uint32_t mon_id, uint32_t area_id)
 {
 	bool ret = false;
@@ -106,6 +142,7 @@ RBSTATIC bool CollDetSphere_vs_OBB(uint32_t mon_id, uint32_t area_id)
 
 	return ret;
 }
+#endif
 
 RBSTATIC void ClosestPtPointSegment(RBCONST RB_Vec3f *CentralPos, RBCONST RB_Vec3f *StPos, RBCONST RB_Vec3f *EdPos, float *t, RB_Vec3f *d)
 {
@@ -400,7 +437,7 @@ RBSTATIC bool CollDetCapsule_vs_Capsule(uint32_t capsule_1, uint32_t capsule_2)
 }
 
 //直方体のエッジを取得
-RBSTATIC void GetBoxEdges(RB_Vec3f *Pos, RB_Vec3f *BoxSize, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
+RBSTATIC void GetBoxEdges(RB_Vec3f *BoxSize, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
 {
 	float lx = RB_Vec3fGetElem(BoxSize, 0u);
 	float ly = RB_Vec3fGetElem(BoxSize, 1u);
@@ -458,40 +495,98 @@ RBSTATIC void GetBoxEdges(RB_Vec3f *Pos, RB_Vec3f *BoxSize, RB_Vec3f *Edge_St, R
 //カプセル vs OBB 当たり判定
 RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 {
+	bool ret = false;
 	float R1;
 	RB_Vec3f Cp_St, Cp_Ed;
 	
+	bool skip_f = true;
+
+	//カプセルの情報を取得
 	GetCapsuleData(capsule_id, &Cp_St, &Cp_Ed, &R1);
 
 	//カプセルの両端で当たり判定( )
-
-	//カプセルの線分とOBBのエッジ(線分)で当たり判定
-		//カプセルの線分とOBBのエッジ(線分)同士で最近接点を計算
-	
-	//相対距離ベクトル rel_q を2乗し、大きさを求める
-	//それが半径の2乗以下ならOBBにカプセルが接触していると判定
-
-#if 0
-	float t1, t2;
-	RB_Vec3f p1, p2;
-
-	float dSq = ClosestPt_SegmentSegment(&C1St, &C1Ed, &C2St, &C2Ed, &t1, &t2, &p1, &p2);
-
-#if 0
-	//最近接点から球体中心までのベクトルを描画
-	f_SegmentId++;
-	DbgCmd_SetSegment( f_SegmentId, 1u, &p1, &p2);
-
-#endif
-
-	bool ret = false;
-	if( dSq <= ((R1 + R2) * (R1 + R2)))
+	if( (CollDetSphere_vs_OBB_Unit(&Cp_St, R1, area_id, 3u)) && skip_f)
 	{
+		skip_f = false;
 		ret = true;
 	}
-	return ret;
-#endif
 
+	if( (CollDetSphere_vs_OBB_Unit(&Cp_Ed, R1, area_id, 3u)) && skip_f)
+	{
+		skip_f = false;
+		ret = true;
+	}
+
+	if(skip_f)
+	{
+		//直方体のエッジ(12本)とカプセルの円柱部分(線分)との最近接点を計算する
+		
+		//area_idで指定したBoxのLCS(ローカル座標系)から見たカプセルの始点・終点位置を計算
+		RB_Vec3f lcs_StPos, lcs_EdPos;
+		CalcPosInLCS(area_id, &Cp_St, &lcs_StPos);
+		CalcPosInLCS(area_id, &Cp_Ed, &lcs_EdPos);
+
+		//Boxのサイズを取得
+		OBJECT_T ObjectData[OBJECT_MAXID];
+		DbgCmd_GetPoseCmd(ObjectData);
+		RBCONST BOX_T Box_obj = ObjectData[area_id].Box;
+		RB_Vec3f l = Box_obj.BoxSize;
+		RB_Vec3f BCpos = ObjectData[area_id].CenterPos;
+
+		//ポリゴンの頂点を指定
+		uint8_t PolygonVertex = 4u;
+		uint8_t ObjectEdgeNum = 3 * PolygonVertex;
+
+		RB_Vec3f EdgeSt[ObjectEdgeNum];
+		RB_Vec3f EdgeEd[ObjectEdgeNum];
+
+		GetBoxEdges(&l, EdgeSt, EdgeEd);
+
+		uint8_t i = 0u;
+		uint8_t colorId = 1u;
+
+		//エッジ毎とのカプセル側との最近接点を求める
+		//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
+		while(i < ObjectEdgeNum)
+		{
+			float t1, t2;
+			RB_Vec3f p1, p2;
+
+			//エッジ[i]とのカプセル内線分でそれぞれの最近接点を求める
+			float dSq = ClosestPt_SegmentSegment(&lcs_StPos, &lcs_EdPos, 
+													&EdgeSt[i], &EdgeEd[i], &t1, &t2, &p1, &p2);
+
+			for(uint8_t i = 0u; i < 3u; i++)
+			{
+				p1.e[i] += BCpos.e[i];
+			}
+
+		//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
+		//当たりがあればその時点でエッジとの判定を終了
+			if( (CollDetSphere_vs_OBB_Unit(&p1, R1, area_id, colorId)))
+			{
+				ret = true;
+				break;
+			}
+
+		#if 0
+		//デバッグ用
+			f_SegmentId++;
+			for(uint8_t i = 0u; i < 3u; i++)
+			{
+				p1.e[i] += BCpos.e[i];
+				p2.e[i] += BCpos.e[i]; 
+			}
+
+			DbgCmd_SetSegment( f_SegmentId, 1u, &p1, &p2);
+
+		#endif
+
+			i++;
+		}
+	}
+
+	return ret;
 }
 
 //=========================================================================================
@@ -511,7 +606,23 @@ void CollisionDet_Cycle(void)
 {
 	bool colldet_result[SEGMENT_MAXID] = { 1u };
 
+	DbgCmd_SetOverlapStatus(11u, CollDetCapsule_vs_OBB(1u, 11u));
 
+#if 0
+	uint8_t mon_id = 1u;
+
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	float R1;
+	RB_Vec3f Cp_St, Cp_Ed;
+
+	GetCapsuleData(mon_id, &Cp_St, &Cp_Ed, &R1);
+	RB_Vec3f Cpos = (ObjectData[mon_id].CenterPos);
+
+	DbgCmd_SetOverlapStatus(11u, CollDetSphere_vs_OBB_Unit(&Cpos, R1, 11u));
+
+#endif
 
 #if 0
 //カプセル vs カプセル あたり判定

@@ -427,7 +427,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #if 1
 	//カプセル
 	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 300.0f, 0.0f, &Rel);
+	RB_Vec3fCreate(0.0f, 700.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 #endif
 
@@ -524,8 +524,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
 #if 1
-	ConfigPose(400.0f, 0.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(100.0f, 400.0f, 400.0f, &BoxSize);
+	ConfigPose(400.0f, -200.0f, 700.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(200.0f, 600.0f, 300.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
 
 #endif
