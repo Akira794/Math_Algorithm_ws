@@ -392,9 +392,9 @@ RBSTATIC void ConfigCylinderObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *End
 	f_id++;
 }
 
-RBSTATIC void ConfigRoundBoxObject(POSEDATA_T *Pose, float Radius, float Height, RB_Vec3f *EndPos)
+RBSTATIC void ConfigRoundRectAngleObject(POSEDATA_T *Pose, float Radius, float Height, RB_Vec3f *EndPos)
 {
-	SSV_T roundbox_obj = { 0 };
+	SSV_T roundrectangle_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
 	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
@@ -409,11 +409,11 @@ RBSTATIC void ConfigRoundBoxObject(POSEDATA_T *Pose, float Radius, float Height,
 	RB_VecRotateVec3f(Deg2Rad(-90.0f), &uaxis, &WidthPos, &Rot_WidthPos);
 
 
-	roundbox_obj.Radius = Radius;
-	roundbox_obj.WidthPos = Rot_WidthPos;
-	roundbox_obj.EndPos = *EndPos;
+	roundrectangle_obj.Radius = Radius;
+	roundrectangle_obj.WidthPos = Rot_WidthPos;
+	roundrectangle_obj.EndPos = *EndPos;
 
-	f_ObjectData[f_id].RoundBox = roundbox_obj;
+	f_ObjectData[f_id].RoundRectAngle = roundrectangle_obj;
 	f_id++;
 }
 
@@ -424,19 +424,17 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f BoxSize;
 	RB_Vec3f Rel;
 
-#if 1
-	//カプセル
-	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 700.0f, 0.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
-#endif
-
-#if 0
 	//ひし形
 	ConfigPose(-200.00f, 0.0f, 100.0f, 0u, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 400.0f, 00.0f, &Rel);
 							//Radius, Width
-	ConfigRoundBoxObject(&Pose, 50.0f, 400.0f, &Rel);
+	ConfigRoundRectAngleObject(&Pose, 100.0f, 400.0f, &Rel);
+
+#if 0
+	//カプセル
+	ConfigPose(0.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 700.0f, 0.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 	//シリンダー
 	ConfigPose(600.0f, 400.0f, 300.0f, 0u, 0.0f, &Pose);
@@ -524,8 +522,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
 #if 1
-	ConfigPose(400.0f, -200.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(200.0f, 100.0f, 300.0f, &BoxSize);
+	ConfigPose(400.0f, -200.0f, 800.0f, 0u, 0.0f, &Pose);
+	RB_Vec3fCreate(400.0f, 100.0f, 300.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
 
 #endif

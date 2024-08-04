@@ -131,7 +131,7 @@ RBSTATIC void ReservationObjectId(void)
 				break;
 
 			case 4u:
-				printf("Type:RoundBox\n");
+				printf("Type:RoundRectAngle\n");
 				break;
 
 			default:
@@ -696,16 +696,16 @@ RBSTATIC void DrawRoundBox(uint32_t id, float objectsolid_val)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
-	SSV_T RoundBox_obj = ObjectData[id].RoundBox;
+	SSV_T RoundBox_obj = ObjectData[id].RoundRectAngle;
 	uint32_t object_id = f_ObjectStartId[id];
 
 	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
 
-	SSV_T RoundBox = ObjectData[id].RoundBox;
-	float Radius = RoundBox.Radius;
-	RB_Vec3f EndPos = RoundBox.EndPos;
-	RB_Vec3f WidthPos = RoundBox.WidthPos;
+	SSV_T RoundRectAngle = ObjectData[id].RoundRectAngle;
+	float Radius = RoundRectAngle.Radius;
+	RB_Vec3f EndPos = RoundRectAngle.EndPos;
+	RB_Vec3f WidthPos = RoundRectAngle.WidthPos;
 
 	RB_Vec3f CentralAxis, CentralWidth, CentralRadius;
 
@@ -961,7 +961,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 				break;
 
 			case 4u:
-				SSV_obj = &Object->RoundBox;
+				SSV_obj = &Object->RoundRectAngle;
 				EndPos = SSV_obj->EndPos;
 				WidthPos = SSV_obj->WidthPos;
 				break;

@@ -30,7 +30,7 @@ typedef struct
 }BOX_T;
 
 //Sphere-swept volume (SSV)
-//Sphere, Capsule, Cylinder, RoundBox
+//Sphere, Capsule, Cylinder, RoundRectAngle
 typedef struct
 {
 	float Radius;
@@ -43,14 +43,14 @@ typedef struct
 	uint32_t Id;//Max 20
 	RB_Vec3f CenterPos;
 	RB_Mat3f CenterRot;
-	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:roundbox
+	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:RoundRectAngle
 	bool TFMode;
 	bool Overlap;
 	BOX_T Box;
 	SSV_T Sphere;
 	SSV_T Capsule;
 	SSV_T Cylinder;
-	SSV_T RoundBox;
+	SSV_T RoundRectAngle;
 }OBJECT_T;
 
 typedef struct

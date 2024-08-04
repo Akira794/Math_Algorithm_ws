@@ -70,7 +70,51 @@ RBSTATIC void ClosestPtPointOBB( RBCONST RB_Vec3f *p, RBCONST OBJECT_T *Object, 
 }
 
 //Sphere vs OBB
-//TODO 複数の当たり判定に対応する必要あり
+RBSTATIC bool CollDetSphere_vs_RectAngle_Unit(RB_Vec3f *CPos, float Radius, uint32_t area_id, uint8_t ColorId)
+{
+	bool ret = false;
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	RB_Vec3f wcs_q;
+	RB_Vec3f rel_q;
+
+//ここでRoudRectAngleをBoxに変換
+	OBJECT_T ConvBoxObject;
+
+
+
+
+	
+
+
+
+	//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
+	ClosestPtPointOBB( CPos, &ObjectData[area_id], &wcs_q);
+
+#if 1
+	//最近接点から球体中心までのベクトルを描画
+	f_SegmentId++;
+	DbgCmd_SetSegment(f_SegmentId, ColorId, &wcs_q, CPos);
+
+	//DbgCmd_SetVec3f("nearest neighbor point: ", &wcs_q);
+#endif
+
+	//最近接点wcs_qと相対距離ベクトルrel_qを計算
+	RB_Vec3fSub(&wcs_q, CPos, &rel_q);
+
+	//相対距離ベクトル rel_q を2乗し、大きさを求める
+	//それが半径の2乗以下ならOBBに球体が接触していると判定
+	if(RB_Vec3fDot(&rel_q,&rel_q) <= (Radius * Radius))
+	{
+		ret = true;
+	}
+
+	return ret;
+}
+
+//Sphere vs OBB
+//Capsule用
 RBSTATIC bool CollDetSphere_vs_OBB_Unit(RB_Vec3f *CPos, float Radius, uint32_t area_id, uint8_t ColorId)
 {
 	bool ret = false;
@@ -590,6 +634,56 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 	return ret;
 }
 
+//ひし形カプセル vs OBB 当たり判定
+RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_id)
+{
+	//area_idとひし形カプセル上の頂点(球体)との判定を見る
+	bool ret = false;
+	float R1;
+	
+	bool skip_f = true;
+
+	//Roundの情報を取得
+
+
+	//RoundRectAngleの端4つの球体で当たり判定( )
+//	if( (CollDetSphere_vs_OBB_Unit(&Cp_St, R1, area_id, 3u)) && skip_f)
+//	{
+//		skip_f = false;
+//		ret = true;
+//	}
+
+
+	if(skip_f)
+	{
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//RoundRectAngle を薄いOBBとみなし area_id上の頂点(球体)との判定を行う
+//WCS(p)から見たOBBの最近接点を取得
+//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
+	//ClosestPtPointOBB( RBCONST RB_Vec3f *p, RBCONST OBJECT_T *Object, RB_Vec3f *q);
+//	RBCONST RB_Mat3f *m = &Object->CenterRot;
+//	RBCONST BOX_T *Box_obj = &Object->Box;
+//	RBCONST RB_Vec3f *l = &Box_obj->BoxSize;
+
+
+
+	//
+}
+
 //=========================================================================================
 
 void CollisionDet_Init(void)
@@ -605,44 +699,7 @@ void CollisionDet_PreStartProc(void)
 
 void CollisionDet_Cycle(void)
 {
-	bool colldet_result[SEGMENT_MAXID] = { 1u };
-
-	DbgCmd_SetOverlapStatus(11u, CollDetCapsule_vs_OBB(1u, 11u));
-
-#if 0
-	uint8_t mon_id = 1u;
-
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-
-	float R1;
-	RB_Vec3f Cp_St, Cp_Ed;
-
-	GetCapsuleData(mon_id, &Cp_St, &Cp_Ed, &R1);
-	RB_Vec3f Cpos = (ObjectData[mon_id].CenterPos);
-
-	DbgCmd_SetOverlapStatus(11u, CollDetSphere_vs_OBB_Unit(&Cpos, R1, 11u));
-
-#endif
-
-#if 0
-//カプセル vs カプセル あたり判定
-	if(CollDetCapsule_vs_Capsule(1u, 2u))
-	{
-		printf("<INFO>: Hit!\n");
-	}
-#endif
-//	Dbg_LCSPos(11u, 1u);
-//	Dbg_LCSPos(12u, 1u);
-
-//	ClosestPt_OBBCenterPos_Segment(11u, 1u);
-//	ClosestPt_OBBCenterPos_Segment(12u, 1u);
-
-#if 0
-	DbgCmd_SetOverlapStatus(11u, CollDetSphere_vs_OBB(1u, 11u) || CollDetSphere_vs_OBB(2u, 11u)) );
-	DbgCmd_SetOverlapStatus(12u, CollDetSphere_vs_OBB(1u, 12u) || CollDetSphere_vs_OBB(2u, 12u)) );
-#endif
-
+	//DbgCmd_SetOverlapStatus(11u, CollDetCapsule_vs_OBB(1u, 11u));
 	f_SegmentId = 0u;
 }
 
