@@ -525,7 +525,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #endif
 #if 1
 	ConfigPose(400.0f, -200.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(200.0f, 600.0f, 300.0f, &BoxSize);
+	RB_Vec3fCreate(200.0f, 100.0f, 300.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
 
 #endif

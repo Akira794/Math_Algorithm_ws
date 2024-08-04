@@ -269,6 +269,7 @@ RBSTATIC void CalcPosInLCS(uint32_t area_id, RBCONST RB_Vec3f *wcs_pos, RB_Vec3f
 		v_ans->e[i] = RB_Vec3fDot(&rel_pos,&u[i]);
 	}
 
+
 //	f_SegmentId++;
 //	DbgCmd_SetSegment(f_SegmentId, 0u, &v_pos, wcs_pos);
 }
@@ -437,14 +438,19 @@ RBSTATIC bool CollDetCapsule_vs_Capsule(uint32_t capsule_1, uint32_t capsule_2)
 }
 
 //直方体のエッジを取得
-RBSTATIC void GetBoxEdges(RB_Vec3f *BoxSize, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
+RBSTATIC void GetBoxEdges(uint8_t area_id, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
 {
-	float lx = RB_Vec3fGetElem(BoxSize, 0u);
-	float ly = RB_Vec3fGetElem(BoxSize, 1u);
-	float lz = RB_Vec3fGetElem(BoxSize, 2u);
+
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	RBCONST BOX_T Box_obj = ObjectData[area_id].Box;
+	RB_Vec3f OBB_BoxSize = Box_obj.BoxSize;
+
+	float lx = RB_Vec3fGetElem(&OBB_BoxSize, 0u);
+	float ly = RB_Vec3fGetElem(&OBB_BoxSize, 1u);
+	float lz = RB_Vec3fGetElem(&OBB_BoxSize, 2u);
 
 	RB_Vec3f BoxInitArray[8u];
-
 	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//A0
 	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[1u]));//B1
 	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[2u]));//C2
@@ -453,6 +459,14 @@ RBSTATIC void GetBoxEdges(RB_Vec3f *BoxSize, RB_Vec3f *Edge_St, RB_Vec3f *Edge_E
 	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
 	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
 	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
+
+	//CenterRotを反映
+	for(uint32_t i = 0u; i < 8u; i++)
+	{
+		RB_Vec3f RotVec;
+		RB_MulMatVec3f(&ObjectData[area_id].CenterRot, &BoxInitArray[i], &RotVec);
+		RB_Vec3fAdd(&ObjectData[area_id].CenterPos, &RotVec, &BoxInitArray[i]);
+	}
 
 	Edge_St[0u] = BoxInitArray[0u];
 	Edge_Ed[0u] = BoxInitArray[1u];
@@ -520,11 +534,6 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 	if(skip_f)
 	{
 		//直方体のエッジ(12本)とカプセルの円柱部分(線分)との最近接点を計算する
-		
-		//area_idで指定したBoxのLCS(ローカル座標系)から見たカプセルの始点・終点位置を計算
-		RB_Vec3f lcs_StPos, lcs_EdPos;
-		CalcPosInLCS(area_id, &Cp_St, &lcs_StPos);
-		CalcPosInLCS(area_id, &Cp_Ed, &lcs_EdPos);
 
 		//Boxのサイズを取得
 		OBJECT_T ObjectData[OBJECT_MAXID];
@@ -540,7 +549,7 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 		RB_Vec3f EdgeSt[ObjectEdgeNum];
 		RB_Vec3f EdgeEd[ObjectEdgeNum];
 
-		GetBoxEdges(&l, EdgeSt, EdgeEd);
+		GetBoxEdges(area_id, EdgeSt, EdgeEd);
 
 		uint8_t i = 0u;
 		uint8_t colorId = 1u;
@@ -553,14 +562,17 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 			RB_Vec3f p1, p2;
 
 			//エッジ[i]とのカプセル内線分でそれぞれの最近接点を求める
-			float dSq = ClosestPt_SegmentSegment(&lcs_StPos, &lcs_EdPos, 
+			float dSq = ClosestPt_SegmentSegment(&Cp_St, &Cp_Ed, 
 													&EdgeSt[i], &EdgeEd[i], &t1, &t2, &p1, &p2);
 
-			for(uint8_t i = 0u; i < 3u; i++)
-			{
-				p1.e[i] += BCpos.e[i];
-			}
+		#if 0
+		//デバッグ用
+			f_SegmentId++;
+			DbgCmd_SetSegment( f_SegmentId, 2u, &p1, &p2);
 
+		#endif
+
+		#if 1
 		//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
 		//当たりがあればその時点でエッジとの判定を終了
 			if( (CollDetSphere_vs_OBB_Unit(&p1, R1, area_id, colorId)))
@@ -568,20 +580,9 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 				ret = true;
 				break;
 			}
-
-		#if 0
-		//デバッグ用
-			f_SegmentId++;
-			for(uint8_t i = 0u; i < 3u; i++)
-			{
-				p1.e[i] += BCpos.e[i];
-				p2.e[i] += BCpos.e[i]; 
-			}
-
-			DbgCmd_SetSegment( f_SegmentId, 1u, &p1, &p2);
-
 		#endif
 
+			//次のエッジへ進む
 			i++;
 		}
 	}
