@@ -5,8 +5,8 @@
 #include "MainTypeDef.h"
 #include "RB_Math.h"
 
-#define OBJECT_MAXID 20u
-#define SEGMENT_MAXID 128u
+#define OBJECT_MAXID 256u
+#define SEGMENT_MAXID 256u
 
 #ifdef __cplusplus
 extern "C" {

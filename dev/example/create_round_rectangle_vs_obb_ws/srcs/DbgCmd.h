@@ -5,8 +5,8 @@
 #include "MainTypeDef.h"
 #include "RB_Math.h"
 
-#define OBJECT_MAXID 20u
-#define SEGMENT_MAXID 128u
+#define OBJECT_MAXID 256u
+#define SEGMENT_MAXID 256u
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,9 +33,10 @@ typedef struct
 //Sphere, Capsule, Cylinder, RoundRectAngle
 typedef struct
 {
-	float Radius;
-	RB_Vec3f EndPos;
-	RB_Vec3f WidthPos;
+	RB_Vec3f Unit_Rel;
+	RB_Vec3f Unit_Width;
+	RB_Vec3f SSV_Size; //0u: Radius, 1u: Rel. 2u: Width
+
 }SSV_T;
 
 typedef struct

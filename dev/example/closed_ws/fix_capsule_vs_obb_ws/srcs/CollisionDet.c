@@ -605,43 +605,23 @@ void CollisionDet_PreStartProc(void)
 
 void CollisionDet_Cycle(void)
 {
-	bool colldet_result[SEGMENT_MAXID] = { 1u };
+	uint8_t ret[OBJECT_MAXID] = { 0 };
+	bool result[OBJECT_MAXID] = { 1 };
 
-	DbgCmd_SetOverlapStatus(11u, CollDetCapsule_vs_OBB(1u, 11u));
-
-#if 0
-	uint8_t mon_id = 1u;
-
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-
-	float R1;
-	RB_Vec3f Cp_St, Cp_Ed;
-
-	GetCapsuleData(mon_id, &Cp_St, &Cp_Ed, &R1);
-	RB_Vec3f Cpos = (ObjectData[mon_id].CenterPos);
-
-	DbgCmd_SetOverlapStatus(11u, CollDetSphere_vs_OBB_Unit(&Cpos, R1, 11u));
-
-#endif
-
-#if 0
-//カプセル vs カプセル あたり判定
-	if(CollDetCapsule_vs_Capsule(1u, 2u))
+	for(uint8_t i = 1u; i < 5u; i++)
 	{
-		printf("<INFO>: Hit!\n");
+		ret[0u] += (uint8_t)CollDetCapsule_vs_OBB(i, 11u);
+		ret[1u] += (uint8_t)CollDetCapsule_vs_OBB(i, 12u);
 	}
-#endif
-//	Dbg_LCSPos(11u, 1u);
-//	Dbg_LCSPos(12u, 1u);
 
-//	ClosestPt_OBBCenterPos_Segment(11u, 1u);
-//	ClosestPt_OBBCenterPos_Segment(12u, 1u);
+	uint8_t idx_base = 11u;
 
-#if 0
-	DbgCmd_SetOverlapStatus(11u, CollDetSphere_vs_OBB(1u, 11u) || CollDetSphere_vs_OBB(2u, 11u)) );
-	DbgCmd_SetOverlapStatus(12u, CollDetSphere_vs_OBB(1u, 12u) || CollDetSphere_vs_OBB(2u, 12u)) );
-#endif
+	for(uint8_t n = 0u; n <2u; n++)
+	{
+		result[n] = (ret[n] == 0u) ? false : true;
+		idx_base += n;
+		DbgCmd_SetOverlapStatus(idx_base, result[n]);
+	}
 
 	f_SegmentId = 0u;
 }

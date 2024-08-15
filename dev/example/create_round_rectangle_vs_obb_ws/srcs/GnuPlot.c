@@ -228,7 +228,8 @@ RBSTATIC void DrawSphere(uint32_t id, float objectsolid_val)
 	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
 	SSV_T Sphere = ObjectData[id].Sphere;
-	float Radius = Sphere.Radius;
+	float Radius = RB_Vec3fGetElem( &(Sphere.SSV_Size), 0u);
+	//float Radius = Sphere.Radius;
 
 	RB_Vec3f CentralAxis, RotCentralAxis;
 	RB_Vec3fCreate(0.0f, 0.0f, Radius, &CentralAxis);
@@ -352,8 +353,13 @@ RBSTATIC void DrawCylinder(uint32_t id, float objectsolid_val)
 	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
 	SSV_T Cylinder = ObjectData[id].Cylinder;
-	float Radius = Cylinder.Radius;
-	RB_Vec3f EndPos = Cylinder.EndPos;
+	//float Radius = Cylinder.Radius;
+	float Radius = RB_Vec3fGetElem( &(Cylinder.SSV_Size), 0u);
+	float Rel_Size = RB_Vec3fGetElem( &(Cylinder.SSV_Size), 1u);
+
+	RB_Vec3f u_rel = Cylinder.Unit_Rel;
+	RB_Vec3f EndPos;
+	RB_Vec3fCreate(((Rel_Size)*(u_rel.e[0])), ((Rel_Size)*(u_rel.e[1])), ((Rel_Size)*(u_rel.e[2])), &EndPos);
 	RB_Vec3f CentralAxis;
 
 	//姿勢を中心軸に反映
@@ -491,8 +497,12 @@ RBSTATIC void DrawCapsule(uint32_t id, float objectsolid_val)
 	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
 	SSV_T Capsule = ObjectData[id].Capsule;
-	float Radius = Capsule.Radius;
-	RB_Vec3f EndPos = Capsule.EndPos;
+	float Radius = RB_Vec3fGetElem( &(Capsule.SSV_Size), 0u);
+	float Rel_Size = RB_Vec3fGetElem( &(Capsule.SSV_Size), 1u);	
+	
+	RB_Vec3f u_rel = Capsule.Unit_Rel;
+	RB_Vec3f EndPos;
+	RB_Vec3fCreate(((Rel_Size)*(u_rel.e[0])), ((Rel_Size)*(u_rel.e[1])), ((Rel_Size)*(u_rel.e[2])), &EndPos);
 	RB_Vec3f CentralAxis;
 
 	//姿勢を中心軸に反映
@@ -629,7 +639,7 @@ RBSTATIC void CreateSideRectAngle(uint32_t id, float objectsolid_val, RB_Vec3f *
 }
 
 //ひし形本体の描画
-RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f *CentralRadius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralWidth, RB_Vec3f *CentralPos)
+RBSTATIC void CreateRoundRectAngleStruct(uint32_t id, float objectsolid_val,  RB_Vec3f *CentralRadius, RB_Vec3f *CentralAxis, RB_Vec3f *CentralWidth, RB_Vec3f *CentralPos)
 {
 	uint32_t object_id = id;
 
@@ -691,21 +701,28 @@ RBSTATIC void CreateRoundBoxStruct(uint32_t id, float objectsolid_val,  RB_Vec3f
 	object_id+= 12u;
 }
 
-RBSTATIC void DrawRoundBox(uint32_t id, float objectsolid_val)
+RBSTATIC void DrawRoundRectAngle(uint32_t id, float objectsolid_val)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
-	SSV_T RoundBox_obj = ObjectData[id].RoundRectAngle;
+	SSV_T RoundRectAngle_obj = ObjectData[id].RoundRectAngle;
 	uint32_t object_id = f_ObjectStartId[id];
 
 	RB_Vec3f CenterPos = ObjectData[id].CenterPos;
 	RB_Mat3f CenterRot = ObjectData[id].CenterRot;
 
-	SSV_T RoundRectAngle = ObjectData[id].RoundRectAngle;
-	float Radius = RoundRectAngle.Radius;
-	RB_Vec3f EndPos = RoundRectAngle.EndPos;
-	RB_Vec3f WidthPos = RoundRectAngle.WidthPos;
+	float Radius = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 0u);
+	float Rel_Size = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 1u);	
+	float Width_Size = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 2u);	
+
+	RB_Vec3f EndPos, WidthPos;	
+	RB_Vec3f u_rel = RoundRectAngle_obj.Unit_Rel;
+	RB_Vec3fCreate(((Rel_Size)*(u_rel.e[0])), ((Rel_Size)*(u_rel.e[1])), ((Rel_Size)*(u_rel.e[2])), &EndPos);
+
+	RB_Vec3f u_width = RoundRectAngle_obj.Unit_Width;
+	RB_Vec3fCreate(((Width_Size)*(u_width.e[0])), ((Width_Size)*(u_width.e[1])), ((Width_Size)*(u_width.e[2])), &WidthPos);
+
 
 	RB_Vec3f CentralAxis, CentralWidth, CentralRadius;
 
@@ -726,7 +743,7 @@ RBSTATIC void DrawRoundBox(uint32_t id, float objectsolid_val)
 
 	RB_MulMatVec3f(&CenterRot, &RadiusVertical, &CentralRadius);
 
-	CreateRoundBoxStruct(object_id, objectsolid_val, &CentralRadius, &CentralAxis, &CentralWidth, &CenterPos);
+	CreateRoundRectAngleStruct(object_id, objectsolid_val, &CentralRadius, &CentralAxis, &CentralWidth, &CenterPos);
 }
 
 RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
@@ -946,34 +963,56 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 	else
 	{
 		SSV_T *SSV_obj;
+		RB_Vec3f *u_rel;
+		RB_Vec3f *u_width;
+		float Rel_Size;
+		float Width_Size;
+
 		RB_Vec3f EndPos;
 		RB_Vec3f WidthPos;
 		switch(ShapeType)
 		{
 			case 2u:
 				SSV_obj = &Object->Capsule;
-				EndPos = SSV_obj->EndPos;
+
+				u_rel = &SSV_obj->Unit_Rel;
+				Rel_Size = SSV_obj->SSV_Size.e[1u];
+				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
+
 				break;
 
 			case 3u:
 				SSV_obj = &Object->Cylinder;
-				EndPos = SSV_obj->EndPos;
+
+				u_rel = &SSV_obj->Unit_Rel;
+				Rel_Size = SSV_obj->SSV_Size.e[1u];
+				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
 				break;
 
 			case 4u:
 				SSV_obj = &Object->RoundRectAngle;
-				EndPos = SSV_obj->EndPos;
-				WidthPos = SSV_obj->WidthPos;
+
+				u_rel = &SSV_obj->Unit_Rel;
+				Rel_Size = SSV_obj->SSV_Size.e[1u];
+				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
+
+				u_width = &SSV_obj->Unit_Width;
+				Width_Size = SSV_obj->SSV_Size.e[2u];
+				RB_Vec3fCreate(((Width_Size)*(u_width->e[0])), ((Width_Size)*(u_width->e[1])), ((Width_Size)*(u_width->e[2])), &WidthPos);
+
 				break;
 
 			default:
 				SSV_obj = &Object->Sphere;
-				float Sphere_Radius = SSV_obj->Radius;
+				//float Sphere_Radius = SSV_obj->Radius;
+				float Sphere_Radius = RB_Vec3fGetElem( &(SSV_obj->SSV_Size), 0u);
+				
 				RB_Vec3fCreate(0.0f, 0.0f, Sphere_Radius, &EndPos);
 				break;
 		}
 
-		float Radius = SSV_obj->Radius;
+		//float Radius = SSV_obj->Radius;
+		float Radius = RB_Vec3fGetElem( &(SSV_obj->SSV_Size), 0u);
 
 		RB_Vec3f Axis, EndPosAxis;
 		RB_MulMatVec3f(m, &EndPos, &Axis);
@@ -1064,7 +1103,7 @@ RBSTATIC void DrawObject3d(void)
 				break;
 
 			case 4u:
-				DrawRoundBox(id, objectsolid_val);
+				DrawRoundRectAngle(id, objectsolid_val);
 				break;
 
 			default:
