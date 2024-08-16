@@ -1126,7 +1126,6 @@ RBSTATIC void DrawObjectArrow(void)
 		DrawObjectSizeArrow(i, &ObjectData[i]);
 	}
 
-	//TODO
 	SEGMENT_T SegmentData[SEGMENT_MAXID];
 	DbgCmd_GetSegment(SegmentData);	
 
@@ -1136,7 +1135,7 @@ RBSTATIC void DrawObjectArrow(void)
 		switch(SegmentData[i].ColorId)
 		{
 			case 0u:
-				DevPlotArrow(f_PlotArrowId, "dark-cyan", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				DevPlotArrow(f_PlotArrowId, "dark-green", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
 				break;
 
 			case 1u:
@@ -1145,6 +1144,14 @@ RBSTATIC void DrawObjectArrow(void)
 
 			case 2u:
 				DevPlotArrow(f_PlotArrowId, "magenta", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+			case 3u:
+				DevPlotArrow(f_PlotArrowId, "dark-violet", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
+				break;
+
+			case 4u:
+				DevPlotArrow(f_PlotArrowId, "dark-red", &(SegmentData[i].StPos), &(SegmentData[i].EdPos) );
 				break;
 
 			default:
