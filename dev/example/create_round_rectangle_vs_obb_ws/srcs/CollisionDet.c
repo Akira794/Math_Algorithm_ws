@@ -768,6 +768,8 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 			n++;
 		}
 	}
+
+	
 #endif
 
 	//直方体のエッジ(12本)に対する丸い長方形のエッジ上の最近接点を計算する
