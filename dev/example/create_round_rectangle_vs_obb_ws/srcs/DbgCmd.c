@@ -454,9 +454,9 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #if 1
 	//丸い長方形
 	ConfigPose(-200.00f, -500.0f, 300.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 0.0f, 900.0f, &Rel);
+	RB_Vec3fCreate(0.0f, 0.0f, 600.0f, &Rel);
 							//Radius, Width( 必ず+)
-	ConfigRoundRectAngleObject(&Pose, 100.0f, 600.0f, &Rel);
+	ConfigRoundRectAngleObject(&Pose, 50.0f, 200.0f, &Rel);
 #endif
 
 #if 0

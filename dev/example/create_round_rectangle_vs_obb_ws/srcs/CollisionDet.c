@@ -78,7 +78,7 @@ RBSTATIC bool CollDetSphere_vs_OBB_Unit(RB_Vec3f *CPos, float Radius, uint32_t a
 	//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
 	ClosestPtPointOBB( CPos, &ObjectData[area_id], &wcs_q);
 
-#if 1
+#if 0
 	//最近接点から球体中心までのベクトルを描画
 	f_SegmentId++;
 	DbgCmd_SetSegment(f_SegmentId, ColorId, &wcs_q, CPos);
@@ -486,12 +486,11 @@ RBSTATIC void GetBoxEdges(uint8_t area_id, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
 }
 
 
-RBSTATIC void GetMonIdClosestPt(RB_Vec3f *Segment_St, RB_Vec3f *Segment_Ed, RB_Vec3f *StPos, RB_Vec3f *EdPos, RB_Vec3f *Ans)
+RBSTATIC void GetMonIdClosestPt(RB_Vec3f *Segment_St, RB_Vec3f *Segment_Ed, RB_Vec3f *StPos, RB_Vec3f *EdPos, RB_Vec3f *p1, RB_Vec3f *p2)
 {
 	float t1, t2, dSq;
-	RB_Vec3f p2;
 
-	dSq = ClosestPt_SegmentSegment(Segment_St, Segment_Ed, StPos, EdPos, &t1, &t2, Ans, &p2);
+	dSq = ClosestPt_SegmentSegment(Segment_St, Segment_Ed, StPos, EdPos, &t1, &t2, p1, p2);
 }
 
 
@@ -533,10 +532,10 @@ RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
 	while(i < ObjectEdgeNum)
 	{
 		float t1, t2;
-		RB_Vec3f p1;
+		RB_Vec3f p1, p2;
 		//エッジ[i]とのカプセル内線分でそれぞれの最近接点を求める
 
-		GetMonIdClosestPt(&Cp_St, &Cp_Ed,&EdgeSt[i], &EdgeEd[i], &p1);
+		GetMonIdClosestPt(&Cp_St, &Cp_Ed,&EdgeSt[i], &EdgeEd[i], &p1, &p2);
 #if 0
 		//デバッグ用
 			f_SegmentId++;
@@ -569,12 +568,11 @@ RBSTATIC bool CollDetSphere_vs_RectAngle_Unit(RB_Vec3f *CPos, float Radius, RBCO
 	//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
 	ClosestPtPointOBB( CPos, Object, &wcs_q);
 
-#if 1
+#if 0
 	//最近接点から球体中心までのベクトルを描画
 	f_SegmentId++;
 	DbgCmd_SetSegment(f_SegmentId, ColorId, &wcs_q, CPos);
 
-	//DbgCmd_SetVec3f("nearest neighbor point: ", &wcs_q);
 #endif
 
 	//最近接点wcs_qと相対距離ベクトルrel_qを計算
@@ -699,78 +697,31 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 
 	GetBoxEdges(area_id, EdgeSt, EdgeEd);
 
-#if 1
-	//RectAngleとOBBの頂点とで当たり判定
-	//TODO RectAngleをOBBに変換する関数に分ける必要あり
-	if(skip_f)
-	{
-		
 //RectAngle用のObjectを作成
-		OBJECT_T RectAngle_obj;
-		RB_Vec3f RectAngleSize;
-		RB_Vec3fCreate((length.e[0u] * 0.5f), (length.e[1u] * 0.5f), 0.0f, &RectAngleSize);
+	OBJECT_T RectAngle_obj;
+	RB_Vec3f RectAngleSize;
+	RB_Vec3fCreate((length.e[0u] * 0.5f), (length.e[1u] * 0.5f), 0.0f, &RectAngleSize);
 
-		RB_Vec3f CenterRel, CenterWidth, CenterOfs;
-		RB_Vec3fCreate(((RectAngleSize.e[0u])*(now_u[0u].e[0u])), 
-						((RectAngleSize.e[0u])*(now_u[0u].e[1u])), 
-						((RectAngleSize.e[0u])*(now_u[0u].e[2u])), &CenterRel);
+	RB_Vec3f CenterRel, CenterWidth, CenterOfs;
+	RB_Vec3fCreate(((RectAngleSize.e[0u])*(now_u[0u].e[0u])), 
+					((RectAngleSize.e[0u])*(now_u[0u].e[1u])), 
+					((RectAngleSize.e[0u])*(now_u[0u].e[2u])), &CenterRel);
 
-		RB_Vec3fCreate(((RectAngleSize.e[1u])*(now_u[1u].e[0u])), 
-						((RectAngleSize.e[1u])*(now_u[1u].e[1u])), 
-						((RectAngleSize.e[1u])*(now_u[1u].e[2u])), &CenterWidth);
+	RB_Vec3fCreate(((RectAngleSize.e[1u])*(now_u[1u].e[0u])), 
+					((RectAngleSize.e[1u])*(now_u[1u].e[1u])), 
+					((RectAngleSize.e[1u])*(now_u[1u].e[2u])), &CenterWidth);
 
-		RB_Vec3fAdd(&CenterRel, &CenterWidth, &CenterOfs);
-		RB_Vec3fAdd(&CenterPos, &CenterOfs, &(RectAngle_obj.CenterPos));
+	RB_Vec3fAdd(&CenterRel, &CenterWidth, &CenterOfs);
+	RB_Vec3fAdd(&CenterPos, &CenterOfs, &(RectAngle_obj.CenterPos));
 
-		RB_Mat3fCreate(
-			now_u[0u].e[0u], now_u[1u].e[0u], now_u[2u].e[0u],
-			now_u[0u].e[1u], now_u[1u].e[1u], now_u[2u].e[1u],
-			now_u[0u].e[2u], now_u[1u].e[2u], now_u[2u].e[2u],
-			&(RectAngle_obj.CenterRot)
-		);
+	RB_Mat3fCreate(
+		now_u[0u].e[0u], now_u[1u].e[0u], now_u[2u].e[0u],
+		now_u[0u].e[1u], now_u[1u].e[1u], now_u[2u].e[1u],
+		now_u[0u].e[2u], now_u[1u].e[2u], now_u[2u].e[2u],
+		&(RectAngle_obj.CenterRot)
+	);
 
-		RectAngle_obj.Box.BoxSize = RectAngleSize;
-
-#if 0
-//Debug用
-		RB_Vec3f DbgRel, DbgWidth;
-		RB_Vec3fCreate(((RectAngleSize.e[0u])*(now_u[0u].e[0u])),
-						((RectAngleSize.e[0u])*(now_u[0u].e[1u])),
-						((RectAngleSize.e[0u])*(now_u[0u].e[2u])), &DbgRel);
-
-		RB_Vec3fCreate(((RectAngleSize.e[1u])*(now_u[1u].e[0u])),
-						((RectAngleSize.e[1u])*(now_u[1u].e[1u])),
-						((RectAngleSize.e[1u])*(now_u[1u].e[2u])), &DbgWidth);
-
-		for(uint8_t i = 0u; i < 3u; i++)
-		{
-			DbgRel.e[i] += RectAngle_obj.CenterPos.e[i];
-			DbgWidth.e[i] += RectAngle_obj.CenterPos.e[i];
-		}
-
-		f_SegmentId++;
-		DbgCmd_SetSegment( f_SegmentId, 4u, &(RectAngle_obj.CenterPos), &DbgRel);
-
-		f_SegmentId++;
-		DbgCmd_SetSegment( f_SegmentId, 4u, &(RectAngle_obj.CenterPos), &DbgWidth);
-#endif
-		uint8_t n = 0u;
-
-		while(n < ObjectVertexNum)
-		{
-			if(CollDetSphere_vs_RectAngle_Unit(&EdgeSt[n], Radius, &RectAngle_obj, 3u))
-			{
-				skip_f = false;
-				ret = true;
-				break;
-			}
-
-			n++;
-		}
-	}
-
-	
-#endif
+	RectAngle_obj.Box.BoxSize = RectAngleSize;
 
 	//直方体のエッジ(12本)に対する丸い長方形のエッジ上の最近接点を計算する
 	if(skip_f)
@@ -787,15 +738,41 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 			//4u: RectAngleのEdge
 			while(n < 4u)
 			{
-				RB_Vec3f p1;
-				GetMonIdClosestPt(&RectAngle_Edge_St[n], &RectAngle_Edge_Ed[n], &EdgeSt[i], &EdgeEd[i], &p1);
+				//OBB上のエッジとRectAngle上のエッジでそれぞれの最近接点(p1, p2)を計算
+				RB_Vec3f p1, p2;
+				GetMonIdClosestPt(&RectAngle_Edge_St[n], &RectAngle_Edge_Ed[n], &EdgeSt[i], &EdgeEd[i], &p1, &p2);
 
-				//衝突と判定したら即whileループを抜ける
-				if((CollDetSphere_vs_OBB_Unit(&p1, Radius, area_id, colorId)))
+//====================================================================================
+				//RectAngleをOBB と OBB上の球体 の当たり判定 
+				if( (n == 0u) && (CollDetSphere_vs_RectAngle_Unit(&p2, Radius, &RectAngle_obj, 3u)))
 				{
+#if 1
+					//デバッグ用
+					f_SegmentId++;
+					DbgCmd_SetSegment( f_SegmentId, 1u, &p2, &p1);
+#endif
+
 					flag = true;
 					break;
 				}
+//====================================================================================
+
+//====================================================================================
+				//OBBとRectAngle上の球体と当たり判定
+				if((CollDetSphere_vs_OBB_Unit(&p1, Radius, area_id, colorId)))
+				{
+
+#if 1
+					//デバッグ用
+					f_SegmentId++;
+					DbgCmd_SetSegment( f_SegmentId, 4u, &p1, &p2);
+#endif
+
+					flag = true;
+					break;
+				}
+//====================================================================================
+
 				n++;
 			}
 
@@ -837,12 +814,13 @@ void CollisionDet_Cycle(void)
 #if 1
 	for(uint8_t i = 1u; i < 5u; i++)
 	{
-		ret[0u] += (uint8_t)CollDetRoundRectAngle_vs_OBB(1u, 11u);
+		ret[0u] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, 11u);
+		ret[1u] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, 12u);
 	}
 
 	uint8_t idx_base = 11u;
 
-	for(uint8_t n = 0u; n <1u; n++)
+	for(uint8_t n = 0u; n <2u; n++)
 	{
 		result[n] = (ret[n] == 0u) ? false : true;
 		idx_base += n;

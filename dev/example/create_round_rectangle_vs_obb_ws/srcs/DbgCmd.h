@@ -6,7 +6,7 @@
 #include "RB_Math.h"
 
 #define OBJECT_MAXID 256u
-#define SEGMENT_MAXID 256u
+#define SEGMENT_MAXID 1024u
 
 #ifdef __cplusplus
 extern "C" {
