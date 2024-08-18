@@ -12,6 +12,7 @@ typedef struct
 {
 	RB_Vec3f CenterPos;
 	RB_Mat3f CenterRot;
+	RB_Vec3f CenterRPY;
 }POSEDATA_T;
 
 typedef struct
@@ -74,24 +75,27 @@ RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, float step_pos)
 
 RBSTATIC void UpdateCmdRot(uint32_t id, uint8_t elem, float step_deg)
 {
-	float NowRPY_elem = f_RPY[id].e[elem];
-
 	RB_Mat3f Target_Roll, Target_Pitch,  Target_Yaw;
 	RB_Mat3f Target_YawPitch;
 	RB_Vec3f axis, Ex, Ey, Ez;
+
+	f_RPY[id].e[elem] += step_deg;
+
+#if 1
 
 	RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &Ex);
 	RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &Ey);
 	RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &Ez);
 
-	f_RPY[id].e[elem] += step_deg;
-
+	//degをradに変換、3次元行列に変換
 	RB_AxisRotateMat3f(&Ex, Deg2Rad(f_RPY[id].e[0u]), &Target_Roll );
 	RB_AxisRotateMat3f(&Ey, Deg2Rad(f_RPY[id].e[1u]), &Target_Pitch );
 	RB_AxisRotateMat3f(&Ez, Deg2Rad(f_RPY[id].e[2u]), &Target_Yaw );
 
 	RB_MulMatMat3f(&Target_Yaw, &Target_Pitch, &Target_YawPitch);
 	RB_MulMatMat3f(&Target_YawPitch, &Target_Roll, &(f_ObjectData[id].CenterRot));
+#endif
+
 }
 
 RBSTATIC void UpdateCmdPose(uint32_t id, uint8_t elem, int32_t flag, float step_pos, float step_deg)
@@ -281,32 +285,10 @@ RBSTATIC void EventTrigger(void)
 	}
 }
 
-RBSTATIC void ConfigPose(float x, float y, float z, uint8_t type, float deg, POSEDATA_T *Pose)
+RBSTATIC void ConfigInitPose(float x, float y, float z, float roll_deg, float pitch_deg, float yaw_deg, POSEDATA_T *Pose)
 {
 	RB_Vec3fCreate(x,y,z, &(Pose->CenterPos));
-	RB_Mat3f Target_Rot = f_RB_Mat3fident;
-	RB_Vec3f axis;
-
-	switch(type)
-	{
-		case 0:
-			RB_Vec3fCreate(1.0f, 0.0f, 0.0f, &axis);
-			break;
-
-		case 1:
-			RB_Vec3fCreate(0.0f, 1.0f, 0.0f, &axis);
-			break;
-
-		case 2:
-			RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &axis);
-			break;
-
-		default:
-			RB_Vec3fCreate(0.0f, 0.0f, 0.0f, &axis);
-			break;
-	}
-	RB_AxisRotateMat3f(&axis, Deg2Rad(deg), &Target_Rot);
-	Pose->CenterRot = Target_Rot;
+	RB_Vec3fCreate(roll_deg, pitch_deg, yaw_deg, &(Pose->CenterRPY));
 }
 
 RBSTATIC void ConfigBlockAreaObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t CenterType, uint8_t id)
@@ -314,11 +296,16 @@ RBSTATIC void ConfigBlockAreaObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t
 	BOX_T box_obj = { 0 };
 
 	f_ObjectData[id].CenterPos = Pose->CenterPos;
-	f_ObjectData[id].CenterRot = Pose->CenterRot;
+	f_ObjectData[id].ShapeType = 0u;
+
+	for(uint8_t i = 0u; i < 3u; i++)
+	{
+		f_RPY[id].e[i] += RB_Vec3fGetElem(&(Pose->CenterRPY), i);	
+	}
 
 	box_obj.BoxSize = *BoxSize;
 	box_obj.CenterType = CenterType;
-	f_ObjectData[id].ShapeType = 0u;
+
 	f_ObjectData[id].Box = box_obj;
 }
 
@@ -327,11 +314,11 @@ RBSTATIC void ConfigWorkAreaObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t 
 	BOX_T box_obj = { 0 };
 
 	f_ObjectData[id].CenterPos = Pose->CenterPos;
-	f_ObjectData[id].CenterRot = Pose->CenterRot;
+	f_ObjectData[id].ShapeType = 0u;
 
 	box_obj.BoxSize = *BoxSize;
 	box_obj.CenterType = CenterType;
-	f_ObjectData[id].ShapeType = 0u;
+
 	f_ObjectData[id].Box = box_obj;
 }
 
@@ -340,11 +327,11 @@ RBSTATIC void ConfigBoxObject(POSEDATA_T *Pose, RB_Vec3f *BoxSize, uint8_t Cente
 	BOX_T box_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
-	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
+	f_ObjectData[f_id].ShapeType = 0u;
 
 	box_obj.BoxSize = *BoxSize;
 	box_obj.CenterType = CenterType;
-	f_ObjectData[f_id].ShapeType = 0u;
+
 	f_ObjectData[f_id].Box = box_obj;
 	f_id++;
 }
@@ -354,9 +341,7 @@ RBSTATIC void ConfigSphereObject(POSEDATA_T *Pose, float Radius)
 	SSV_T sphere_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
-	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
 	f_ObjectData[f_id].ShapeType = 1u;
-	//sphere_obj.Radius = Radius;
 
 	RB_Vec3fCreate(Radius, 0.0f, 0.0f, &(sphere_obj.SSV_Size));
 
@@ -369,12 +354,7 @@ RBSTATIC void ConfigCapsuleObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *EndP
 	SSV_T capsule_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
-	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
 	f_ObjectData[f_id].ShapeType = 2u;
-
-	//capsule_obj.Radius = Radius;
-
-	//capsule_obj.EndPos = *EndPos;
 
 	RB_Vec3f u_rel;
 	RB_Vec3fNormalize(EndPos, &u_rel);
@@ -393,11 +373,7 @@ RBSTATIC void ConfigCylinderObject(POSEDATA_T *Pose, float Radius, RB_Vec3f *End
 	SSV_T cylinder_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
-	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
 	f_ObjectData[f_id].ShapeType = 3u;
-//	cylinder_obj.Radius = Radius;
-
-//	cylinder_obj.EndPos = *EndPos;
 
 	RB_Vec3f u_rel;
 	RB_Vec3fNormalize(EndPos, &u_rel);
@@ -416,7 +392,6 @@ RBSTATIC void ConfigRoundRectAngleObject(POSEDATA_T *Pose, float Radius, float H
 	SSV_T roundrectangle_obj = { 0 };
 
 	f_ObjectData[f_id].CenterPos = Pose->CenterPos;
-	f_ObjectData[f_id].CenterRot = Pose->CenterRot;
 	f_ObjectData[f_id].ShapeType = 4u;
 
 	RB_Vec3f u_rel, u_vertical, u_width;
@@ -453,60 +428,60 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 
 #if 1
 	//球体
-	ConfigPose(-300.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 100.0f);
 
 	//丸い長方形
-	ConfigPose(900.00f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 0.0f, 600.0f, &Rel);
+	ConfigInitPose(900.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
 							//Radius, Width( 必ず+)
 	ConfigRoundRectAngleObject(&Pose, 100.0f, 200.0f, &Rel);
 
 	//カプセル
-	ConfigPose(0.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(0.0f, 0.0f, 600.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 300.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 	//カプセル
-	ConfigPose(0.0f, -800.0f, 700.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(0.0f, -800.0f, 300.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 0.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
 
 	//カプセル
-	ConfigPose(0.0f, -300.0f, 800.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(0.0f, -300.0f, 800.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 400.0f, 200.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 	//カプセル
-	ConfigPose(0.0f, 600.0f, 900.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(0.0f, 600.0f, 700.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(-300.0f, 0.0f, 400.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 	//カプセル
-	ConfigPose(200.0f, 100.0f, 900.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(200.0f, 100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 #endif
 
 #if 1
-	ConfigPose(600.0f, -100.0f, 900.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(600.0f, -100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 300.0f, 500.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
 
-	ConfigPose(-900.0f, -200.0f, 700.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(-900.0f, -200.0f, 700.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(400.0f, 800.0f, 400.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 12u);
 
-	ConfigPose(300.0f, 700.0f, 700.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(300.0f, 700.0f, 700.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 200.0f, 600.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 13u);
 
-	ConfigPose(400.0f, 300.0f, 200.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(400.0f, 300.0f, 200.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 14u);
 
-	ConfigPose(-400.0f, 300.0f, 700.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(-400.0f, 300.0f, 700.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(200.0f, 50.0f, 600.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 15u);
 
@@ -515,75 +490,14 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #if 0
 	//描画お試し用
 	//シリンダー
-	ConfigPose(-600.0f, 400.0f, 800.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(-600.0f, 400.0f, 800.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(-400.0f, 0.0f, -400.0f, &Rel);
 	ConfigCylinderObject(&Pose, 200.0f, &Rel);
 
 	//シリンダー
-	ConfigPose(600.0f, -400.0f, 800.0f, 0u, 0.0f, &Pose);
+	ConfigInitPose(600.0f, -400.0f, 800.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(200.0f, 0.0f, 100.0f, &Rel);
 	ConfigCylinderObject(&Pose, 100.0f, &Rel);
-
-#endif
-
-#if 0
-	//カプセル
-	ConfigPose(0.0f, 0.0f, 600.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(300.0f, 300.0f, 0.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
-
-	//カプセル
-	ConfigPose(0.0f, -800.0f, 700.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(400.0f, 0.0f, 0.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 200.0f, &Rel);
-
-	//カプセル
-	ConfigPose(0.0f, -300.0f, 800.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(0.0f, 400.0f, 200.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
-
-	//カプセル
-	ConfigPose(0.0f, 600.0f, 900.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(-300.0f, 0.0f, 400.0f, &Rel);
-	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
-#endif
-
-#if 0
-	//球体
-	ConfigPose(-300.0f, 0.0f, 500.0f, 0u, 0.0f, &Pose);
-	ConfigSphereObject(&Pose, 100.0f);
-
-	//球体
-	ConfigPose(300.0f, 500.0f, 800.0f, 0u, 0.0f, &Pose);
-	ConfigSphereObject(&Pose, 200.0f);
-
-#endif
-
-#if 0
-	//Box中心変更お試し
-	ConfigPose(-300.0f, -200.0f, 0.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 1u);
-
-	ConfigPose(-500.0f, -500.0f, 0.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 2u);
-
-	ConfigPose(800.0f, -600.0f, 0.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 3u);
-
-	ConfigPose(-500.0f, 0.0f, 300.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(100.0f, 300.0f, 100.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 4u);
-
-	ConfigPose(0.0f, -900.0f, 1000.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 5u);
-
-	ConfigPose(300.0f, -200.0f, 100.0f, 0u, 0.0f, &Pose);
-	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &BoxSize);
-	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
 
 	for(uint32_t id = 0; id < (uint32_t)OBJECT_MAXID; id++)
@@ -594,9 +508,9 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	}
 }
 
-uint8_t DbgCmd_GetMonObjectNum(void)
+uint32_t DbgCmd_GetMonObjectNum(void)
 {
-	uint8_t ret = 1u;
+	uint32_t ret = 0u;
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
@@ -613,16 +527,16 @@ uint8_t DbgCmd_GetMonObjectNum(void)
 	return ret;
 }
 
-uint8_t DbgCmd_GetAreaObjectNum(void)
+uint32_t DbgCmd_GetAreaObjectNum(void)
 {
-	uint8_t ret = 0u;
+	uint32_t ret = 0u;
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
-		uint8_t type = ObjectData[i].ShapeType;
+		uint32_t type = ObjectData[i].ShapeType;
 		if(type == 0u)
 		{
 			ret++;

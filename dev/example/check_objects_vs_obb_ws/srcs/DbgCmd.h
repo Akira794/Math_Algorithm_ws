@@ -5,7 +5,7 @@
 #include "MainTypeDef.h"
 #include "RB_Math.h"
 
-#define OBJECT_MAXID 256u
+#define OBJECT_MAXID 128u
 #define SEGMENT_MAXID 1024u
 
 #ifdef __cplusplus
@@ -67,8 +67,8 @@ void DbgCmd_Cycle(void);
 void DbgCmd_Destroy(void);
 
 void DbgCmd_SetOverlapStatus(uint32_t id, bool status);
-uint8_t DbgCmd_GetMonObjectNum(void);
-uint8_t DbgCmd_GetAreaObjectNum(void);
+uint32_t DbgCmd_GetMonObjectNum(void);
+uint32_t DbgCmd_GetAreaObjectNum(void);
 
 void DbgCmd_GetCmdStatus(DBGCMD_T *CmdSts);
 void DbgCmd_Info(RBCONST char *str);

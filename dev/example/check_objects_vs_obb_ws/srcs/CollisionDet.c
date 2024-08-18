@@ -803,7 +803,7 @@ void CollisionDet_PreStartProc(void)
 	NO_STATEMENT;
 }
 
-RBSTATIC uint8_t GetObjectType(uint8_t mon_id)
+RBSTATIC uint8_t GetObjectType(uint32_t mon_id)
 {
 	uint8_t ret = 0u;
 
@@ -817,15 +817,21 @@ void CollisionDet_Cycle(void)
 {
 	uint8_t ret[OBJECT_MAXID] = { 0u };
 	bool result[OBJECT_MAXID] = { 1u };
-	uint8_t area_objnum = DbgCmd_GetAreaObjectNum();
 
-	uint8_t ObjectBaseNum = 11u;
+	uint32_t area_objnum = 0u;
+	uint32_t mon_objectnum = 0u;
 
-	if(area_objnum > 0u)
+	area_objnum = DbgCmd_GetAreaObjectNum();
+	mon_objectnum = DbgCmd_GetMonObjectNum();
+
+	uint32_t ObjectBaseNum = 11u;
+	uint8_t i = 1u;
+
+	if(area_objnum && mon_objectnum)
 	{
-		for(uint8_t i = 1u; i < DbgCmd_GetMonObjectNum(); i++)
+		while( i < (mon_objectnum +1u) )
 		{
-			for(uint8_t j = 0u; j < area_objnum; j++)
+			for(uint32_t j = 0u; j < area_objnum; j++)
 			{
 				switch(GetObjectType(i))
 				{
@@ -846,8 +852,10 @@ void CollisionDet_Cycle(void)
 						break;
 				}
 			}
+			i++;
 		}
 
+//判定結果をAreaObjectの色を変更
 		for(uint8_t n = 0u; n < area_objnum; n++)
 		{
 			result[n] = (ret[n] == 0u) ? false : true;

@@ -71,6 +71,7 @@ RBSTATIC void ReservationObjectId(void)
 	DbgCmd_GetPoseCmd(ObjectData);
 	uint32_t id = 2u;
 	uint32_t add_id = 0u;
+
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
 		uint8_t ShapeType = ObjectData[i].ShapeType;
@@ -105,6 +106,7 @@ RBSTATIC void ReservationObjectId(void)
 		f_ObjectStartId[i] = id;
 	}
 	printf("\n\n");
+	
 	for(uint32_t n = 1u; n < (uint32_t)OBJECT_MAXID; n++)
 	{
 		uint8_t ShapeType = ObjectData[n].ShapeType;
