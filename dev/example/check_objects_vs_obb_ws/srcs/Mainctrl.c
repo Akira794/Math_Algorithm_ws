@@ -58,8 +58,8 @@ void Mainctrl_Init(void)
 	CollisionDet_Init();
 
 	f_mctrl.endflag = false;
-	f_mctrl.engine_dt = 2 * 1000u;//usec
-	f_mctrl.output_dt = 4 * 1000u;//usec
+	f_mctrl.engine_dt = 2u * 1000u;//usec
+	f_mctrl.output_dt = 4u * 1000u;//usec
 }
 
 void Mainctrl_PreStartProc(void)
