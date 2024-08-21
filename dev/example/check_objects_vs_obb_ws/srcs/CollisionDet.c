@@ -309,10 +309,29 @@ float *L1s, float *L2t, RB_Vec3f *L1c, RB_Vec3f *L2c)
 			t = 0.0f;
 			s = Clamp( ((-c) / a), 0.0f, 1.0f ); //t = 0 => s = (b * t - c) / a = -c / a
 		}
+
 		//ここから一般的な縮退の場合を開始
 		else
 		{
 			float b = RB_Vec3fDot(&d1, &d2);
+#if 1
+			float tnom = b * s + f;
+
+			if(tnom < 0.0f)
+			{
+				t = 0.0f;
+				s = Clamp( ((-c) / a), 0.0f, 1.0f);
+			}
+			else if(tnom > e)
+			{
+				t = 1.0f;
+				s = Clamp( ((b -c) / a), 0.0f, 1.0f);
+			}
+			else
+			{
+				t = tnom / e;
+			}
+#else
 
 			float denom = a * e - b * b; //常に非負
 
@@ -347,6 +366,7 @@ float *L1s, float *L2t, RB_Vec3f *L1c, RB_Vec3f *L2c)
 			{
 				NO_STATEMENT;
 			}
+#endif
 		}
 	}
 

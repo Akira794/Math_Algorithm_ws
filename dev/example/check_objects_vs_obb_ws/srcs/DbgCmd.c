@@ -431,16 +431,32 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 100.0f);
 
+	//カプセル
+	ConfigInitPose(0.0f, 0.0f, 600.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(300.0f, 300.0f, 0.0f, &Rel);
+	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
 	//丸い長方形
 	ConfigInitPose(900.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
 							//Radius, Width( 必ず+)
 	ConfigRoundRectAngleObject(&Pose, 100.0f, 200.0f, &Rel);
 
+#else
+	//球体
+	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	ConfigSphereObject(&Pose, 100.0f);
+
 	//カプセル
 	ConfigInitPose(0.0f, 0.0f, 600.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 300.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
+
+	//丸い長方形
+	ConfigInitPose(900.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(0.0f, 0.0f, 400.0f, &Rel);
+							//Radius, Width( 必ず+)
+	ConfigRoundRectAngleObject(&Pose, 100.0f, 200.0f, &Rel);
 
 	//カプセル
 	ConfigInitPose(0.0f, -800.0f, 300.0f, 0.0f, 0.0f, 0.0f, &Pose);
@@ -465,6 +481,11 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #endif
 
 #if 1
+	ConfigInitPose(600.0f, -100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 300.0f, 500.0f, &BoxSize);
+	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);
+
+#else
 	ConfigInitPose(600.0f, -100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 300.0f, 500.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);

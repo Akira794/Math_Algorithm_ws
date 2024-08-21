@@ -9,8 +9,8 @@
 
 typedef struct{
 	bool endflag;
-	float engine_dt;
-	float output_dt;
+	uint32_t engine_dt;
+	uint32_t output_dt;
 }MainCtrl_T;
 
 RBSTATIC MainCtrl_T f_mctrl;
@@ -58,8 +58,8 @@ void Mainctrl_Init(void)
 	CollisionDet_Init();
 
 	f_mctrl.endflag = false;
-	f_mctrl.engine_dt = 0.01f;
-	f_mctrl.output_dt = 0.5f;
+	f_mctrl.engine_dt = 2 * 1000u;//usec
+	f_mctrl.output_dt = 4 * 1000u;//usec
 }
 
 void Mainctrl_PreStartProc(void)
@@ -76,7 +76,7 @@ void Mainctrl_EngineLoop(void)
 	while(IsLoopOut())
 	{
 		f_IsStartUp = SimLoop(true);
-		sleep(f_mctrl.engine_dt);
+		usleep(f_mctrl.engine_dt);
 	}
 	Dbg_Info("Exit MainEngine Loop");
 }
@@ -97,15 +97,15 @@ void Mainctrl_OutputLoop(void)
 	while(IsLoopOut())
 	{
 		Plot_Cycle();
-		sleep(f_mctrl.output_dt);
+		usleep(f_mctrl.output_dt);
 	}
 	Dbg_Info("Exit Output Loop");
+	Plot_Destroy();
 }
 
 void Mainctrl_Destroy(void)
 {
 	Dbg_Info("Exit MainEngine");	
-	Plot_Destroy();
 	CollisionDet_Destroy();
 	DbgCmd_Destroy();
 }
