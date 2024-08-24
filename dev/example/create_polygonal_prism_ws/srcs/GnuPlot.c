@@ -65,12 +65,49 @@ RBSTATIC void DevPlotArrow(uint32_t arrow_id, char *color, RB_Vec3f *startpos, R
 		);//x
 }
 
+RBSTATIC uint32_t GetPolygonVertexNum(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	uint32_t num = Polygon_obj.VerticesMaxNum;
+	return num;
+}
+
+RBSTATIC void GetPolygonNormal3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *ans)
+{
+	uint32_t num = GetPolygonVertexNum(PolygonalPrism_obj);
+	RBAssert(idx < num);
+
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	*ans = Polygon_obj.Normal[idx];
+}
+
+RBSTATIC void GetPolygonVertices3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *ans)
+{
+	uint32_t num = GetPolygonVertexNum(PolygonalPrism_obj);
+	RBAssert(idx < num);
+
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	*ans = Polygon_obj.Vertices[idx];
+}
+
+RBSTATIC float GetPolygonalPrism_z_top(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	return	PolygonalPrism_obj->z_top;
+}
+
+RBSTATIC float GetPolygonalPrism_z_bottom(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	return PolygonalPrism_obj->z_bottom;
+}
+
 RBSTATIC void ReservationObjectId(void)
 {
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 	uint32_t id = 2u;
 	uint32_t add_id = 0u;
+
+	uint32_t PolygonalverticalNum = 0u;
 
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
@@ -97,6 +134,11 @@ RBSTATIC void ReservationObjectId(void)
 
 			case 4u:
 				add_id = 338u;
+				break;
+
+			case 5u:
+				PolygonalverticalNum = GetPolygonVertexNum(&ObjectData[i].PolygonalPrism);
+				add_id = PolygonalverticalNum + 2u;
 				break;
 
 			default:
@@ -136,6 +178,10 @@ RBSTATIC void ReservationObjectId(void)
 				printf("Type:RoundRectAngle\n");
 				break;
 
+			case 5u:
+				printf("Type:PolygonalPrism: %u \n", PolygonalverticalNum);
+				break;
+
 			default:
 				printf("Type:None\n");
 				break;
@@ -150,10 +196,10 @@ RBSTATIC void DrawGround(float z)
 	float objectsolid_val = 0.5;
 	RB_Vec3f SurfaceArray[4u] = { 0.0f };
 
-	RB_Vec3fCreate( -f_plot_width, -f_plot_width, z, &(SurfaceArray[0u]));//A0
-	RB_Vec3fCreate( -f_plot_width,  f_plot_width, z, &(SurfaceArray[1u]));//B1
-	RB_Vec3fCreate(  f_plot_width,  f_plot_width, z, &(SurfaceArray[2u]));//C2
-	RB_Vec3fCreate(  f_plot_width, -f_plot_width, z, &(SurfaceArray[3u]));//D3
+	RB_Vec3fCreate( -f_plot_width, -f_plot_width, z, &(SurfaceArray[0u]));//P0
+	RB_Vec3fCreate(  f_plot_width, -f_plot_width, z, &(SurfaceArray[1u]));//P1
+	RB_Vec3fCreate(  f_plot_width,  f_plot_width, z, &(SurfaceArray[2u]));//P2
+	RB_Vec3fCreate( -f_plot_width,  f_plot_width, z, &(SurfaceArray[3u]));//P3
 
 	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj 1 polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
@@ -796,14 +842,14 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	float wh_y = RB_Vec3fGetElem(&width3f, 1u) * (-ly);
 	float wh_z = RB_Vec3fGetElem(&width3f, 2u) * (-lz);
 
-	RB_Vec3fCreate( wh_x, wh_y, wh_z, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( wh_x,   ly, wh_z, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(   lx,   ly, wh_z, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(   lx, wh_y, wh_z, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( wh_x, wh_y,   lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( wh_x,   ly,   lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(   lx,   ly,   lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(   lx, wh_y,   lz, &(BoxInitArray[7u]));//H7
+	RB_Vec3fCreate( wh_x, wh_y, wh_z, &(BoxInitArray[0u]));//P0
+	RB_Vec3fCreate(   lx, wh_y, wh_z, &(BoxInitArray[1u]));//P1
+	RB_Vec3fCreate(   lx,   ly, wh_z, &(BoxInitArray[2u]));//P2
+	RB_Vec3fCreate( wh_x,   ly, wh_z, &(BoxInitArray[3u]));//P3
+	RB_Vec3fCreate( wh_x, wh_y,   lz, &(BoxInitArray[4u]));//P4
+	RB_Vec3fCreate(   lx, wh_y,   lz, &(BoxInitArray[5u]));//P5
+	RB_Vec3fCreate(   lx,   ly,   lz, &(BoxInitArray[6u]));//P6
+	RB_Vec3fCreate( wh_x,   ly,   lz, &(BoxInitArray[7u]));//P7
 
 	//CenterRotを反映
 	for(uint32_t i = 0u; i < 8u; i++)
@@ -847,6 +893,7 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	);
 	object_id++;
 
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \'%s\' \n", \
 		object_id, \
@@ -859,39 +906,28 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	);
 	object_id++;
 
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \'%s\' \n", \
 		object_id, \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[2u], 0u),RB_Vec3fGetElem(&BoxVertex[2u], 1u),RB_Vec3fGetElem(&BoxVertex[2u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		color
 	);
 	object_id++;
 
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \'%s\' \n", \
 		object_id, \
-		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[3u], 0u),RB_Vec3fGetElem(&BoxVertex[3u], 1u),RB_Vec3fGetElem(&BoxVertex[3u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
-		color
-	);
-	object_id++;
-
-	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
-	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
-		depthorder fillcolor \'%s\' \n", \
-		object_id, \
-		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
 		color
 	);
 	object_id++;
@@ -900,13 +936,134 @@ RBSTATIC void DrawBox(uint32_t id, float objectsolid_val)
 	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
 		depthorder fillcolor \'%s\' \n", \
 		object_id, \
+		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[1u], 0u),RB_Vec3fGetElem(&BoxVertex[1u], 1u),RB_Vec3fGetElem(&BoxVertex[1u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
 		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
-		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[0u], 0u),RB_Vec3fGetElem(&BoxVertex[0u], 1u),RB_Vec3fGetElem(&BoxVertex[0u], 2u), \
 		color
 	);
+	object_id++;
+
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
+	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		depthorder fillcolor \'%s\' \n", \
+		object_id, \
+		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[5u], 0u),RB_Vec3fGetElem(&BoxVertex[5u], 1u),RB_Vec3fGetElem(&BoxVertex[5u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[6u], 0u),RB_Vec3fGetElem(&BoxVertex[6u], 1u),RB_Vec3fGetElem(&BoxVertex[6u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[7u], 0u),RB_Vec3fGetElem(&BoxVertex[7u], 1u),RB_Vec3fGetElem(&BoxVertex[7u], 2u), \
+		RB_Vec3fGetElem(&BoxVertex[4u], 0u),RB_Vec3fGetElem(&BoxVertex[4u], 1u),RB_Vec3fGetElem(&BoxVertex[4u], 2u), \
+		color
+	);
+}
+
+RBSTATIC void DrawPolygonalPrism(uint32_t id, float objectsolid_val)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+	uint32_t object_id = f_ObjectStartId[id];
+	bool OverlapId = ObjectData[id].Overlap;
+
+	char hit[10] = "red";
+	char none[10] = "#33AAAA";
+	char color[10];
+	uint32_t n = 0u;
+
+	if(OverlapId)
+	{
+		while (hit[n] != '\0')
+		{
+			color[n] = hit[n];
+			n++;
+		}
+	}
+	else
+	{
+		while (none[n] != '\0')
+		{
+			color[n] = none[n];
+			n++;
+		}
+	}
+
+	float z_top = GetPolygonalPrism_z_top(&(ObjectData[id].PolygonalPrism));
+	float z_bottom = GetPolygonalPrism_z_bottom(&(ObjectData[id].PolygonalPrism));
+
+	uint32_t Vertexnum = GetPolygonVertexNum(&(ObjectData[id].PolygonalPrism));
+	//GetPolygonVertexNum(POLYGONAL_PRISM_T *PolygonalPrism_obj);
+	//GetPolygonNormal3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *ans);
+	//GetPolygonVertices3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *ans);
+
+	RB_Vec3f PolygonVertex[VERTICES_MAXID] = { 0.0f };
+
+	for(uint32_t i = 0u; i < (uint32_t)VERTICES_MAXID; i++)
+	{
+		GetPolygonVertices3f(&(ObjectData[id].PolygonalPrism), 0u, &PolygonVertex[i] );
+	}
+
+	for(uint32_t i = 0u; i < Vertexnum; i++)
+	{
+		GetPolygonVertices3f(&(ObjectData[id].PolygonalPrism), i, &PolygonVertex[i] );
+	}
+
+	fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
+	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to\
+		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		depthorder fillcolor \"#0918e6\" \n", \
+		object_id, \
+		RB_Vec3fGetElem(&PolygonVertex[0u], 0u),RB_Vec3fGetElem(&PolygonVertex[0u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[1u], 0u),RB_Vec3fGetElem(&PolygonVertex[1u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[2u], 0u),RB_Vec3fGetElem(&PolygonVertex[2u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[3u], 0u),RB_Vec3fGetElem(&PolygonVertex[3u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[4u], 0u),RB_Vec3fGetElem(&PolygonVertex[4u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[5u], 0u),RB_Vec3fGetElem(&PolygonVertex[5u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[6u], 0u),RB_Vec3fGetElem(&PolygonVertex[6u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[7u], 0u),RB_Vec3fGetElem(&PolygonVertex[7u], 1u),z_bottom, \
+		RB_Vec3fGetElem(&PolygonVertex[0u], 0u),RB_Vec3fGetElem(&PolygonVertex[0u], 1u),z_bottom  \
+	);
+	object_id++;
+
+	fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to\
+		%.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+		depthorder fillcolor \'%s\' \n", \
+		object_id, \
+		RB_Vec3fGetElem(&PolygonVertex[0u], 0u),RB_Vec3fGetElem(&PolygonVertex[0u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[1u], 0u),RB_Vec3fGetElem(&PolygonVertex[1u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[2u], 0u),RB_Vec3fGetElem(&PolygonVertex[2u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[3u], 0u),RB_Vec3fGetElem(&PolygonVertex[3u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[4u], 0u),RB_Vec3fGetElem(&PolygonVertex[4u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[5u], 0u),RB_Vec3fGetElem(&PolygonVertex[5u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[6u], 0u),RB_Vec3fGetElem(&PolygonVertex[6u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[7u], 0u),RB_Vec3fGetElem(&PolygonVertex[7u], 1u),z_top, \
+		RB_Vec3fGetElem(&PolygonVertex[0u], 0u),RB_Vec3fGetElem(&PolygonVertex[0u], 1u),z_top, \
+		color
+	);
+	object_id++;
+
+
+	uint32_t first;
+	uint32_t second;
+
+	for(uint32_t i = 0u; i < (uint32_t)VERTICES_MAXID; i++)
+	{
+		first = i;
+		second = (i + 1u) % ((uint32_t)VERTICES_MAXID);
+
+		fprintf(plt_3d, "set style fill transparent solid %f \n", objectsolid_val);
+		fprintf(plt_3d, "set obj %u polygon from %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f to %.3f,%.3f,%.3f \
+			depthorder fillcolor \'%s\' \n", \
+			object_id, \
+			RB_Vec3fGetElem(&PolygonVertex[first], 0u),RB_Vec3fGetElem(&PolygonVertex[first], 1u),z_bottom, \
+			RB_Vec3fGetElem(&PolygonVertex[second], 0u),RB_Vec3fGetElem(&PolygonVertex[second], 1u),z_bottom, \
+			RB_Vec3fGetElem(&PolygonVertex[second], 0u),RB_Vec3fGetElem(&PolygonVertex[second], 1u),z_top, \
+			RB_Vec3fGetElem(&PolygonVertex[first], 0u),RB_Vec3fGetElem(&PolygonVertex[first], 1u),z_top, \
+			RB_Vec3fGetElem(&PolygonVertex[first], 0u),RB_Vec3fGetElem(&PolygonVertex[first], 1u),z_bottom, \
+			color
+		);
+		object_id++;
+
+	}
 }
 
 RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
@@ -1108,6 +1265,10 @@ RBSTATIC void DrawObject3d(void)
 				DrawRoundRectAngle(id, objectsolid_val);
 				break;
 
+			case 5u:
+				DrawPolygonalPrism(id, objectsolid_val);
+				break;
+
 			default:
 				NO_STATEMENT;
 				break;
@@ -1189,7 +1350,7 @@ RBSTATIC void SetConfig(void)
 	//fprintf(plt_3d,"set zrange[-%d:%d] \n",500, (f_plot_width * 2));
 
 	fprintf(plt_3d,"set ticslevel 0\n");/// z軸をxy平面に接続するコマンド
-	fprintf(plt_3d,"set view 60,110 \n");
+	fprintf(plt_3d,"set view 60,35 \n");
 	fprintf(plt_3d,"set nogrid\n");
 	//fprintf(plt_3d,"set grid\n");
 

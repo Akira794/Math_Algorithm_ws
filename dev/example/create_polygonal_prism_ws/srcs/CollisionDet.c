@@ -436,14 +436,14 @@ RBSTATIC void GetBoxEdges(uint8_t area_id, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
 	float lz = RB_Vec3fGetElem(&OBB_BoxSize, 2u);
 
 	RB_Vec3f BoxInitArray[8u];
-	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//A0
-	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[1u]));//B1
-	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[2u]));//C2
-	RB_Vec3fCreate(  lx, -ly, -lz, &(BoxInitArray[3u]));//D3
-	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[4u]));//E4
-	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[5u]));//F5
-	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//G6
-	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[7u]));//H7
+	RB_Vec3fCreate( -lx, -ly, -lz, &(BoxInitArray[0u]));//P0
+	RB_Vec3fCreate(  lx, -ly, -lz, &(BoxInitArray[1u]));//P1
+	RB_Vec3fCreate(  lx,  ly, -lz, &(BoxInitArray[2u]));//P2
+	RB_Vec3fCreate( -lx,  ly, -lz, &(BoxInitArray[3u]));//P3
+	RB_Vec3fCreate( -lx, -ly,  lz, &(BoxInitArray[4u]));//P4
+	RB_Vec3fCreate(  lx, -ly,  lz, &(BoxInitArray[5u]));//P5
+	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//P6
+	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[7u]));//P7
 
 	//CenterRotを反映
 	for(uint32_t i = 0u; i < 8u; i++)
@@ -607,7 +607,7 @@ RBSTATIC bool CollDetSphere_vs_RectAngle_Unit(RB_Vec3f *CPos, float Radius, RBCO
 }
 
 #if 0
-RBSTATIC void ClosestPtPointRectAngle(RB_Vec3f *Vertex, RB_Vec3f *CPos, RB_Vec3f *U_Normal, RB_Vec3f *Ans)
+RBSTATIC void ClosestPtPointPlane(RB_Vec3f *Vertex, RB_Vec3f *CPos, RB_Vec3f *U_Normal, RB_Vec3f *Ans)
 {
     //CPos->Vertexベクトル
     RB_Vec3f CPos_Vertex;
@@ -811,6 +811,16 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 	return ret;
 }
 
+RBSTATIC bool CollDetSphere_vs_PolygonalPrism(uint32_t mon_id, uint32_t area_id)
+{
+	bool ret = false;
+	bool skip_f = true;
+
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	return ret;
+}
 //=========================================================================================
 
 void CollisionDet_Init(void)
@@ -865,6 +875,10 @@ void CollisionDet_Cycle(void)
 
 					case 4u:
 						ret[j] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, (j + ObjectBaseNum));
+						break;
+
+					case 5u:
+						ret[j] += (uint8_t)CollDetSphere_vs_PolygonalPrism(i, (j + ObjectBaseNum));
 						break;
 
 					default:

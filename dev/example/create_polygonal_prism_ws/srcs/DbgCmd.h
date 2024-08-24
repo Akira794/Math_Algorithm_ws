@@ -7,6 +7,7 @@
 
 #define OBJECT_MAXID 128u
 #define SEGMENT_MAXID 1024u
+#define VERTICES_MAXID 8u
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +19,30 @@ typedef struct
 	bool endflag;
 
 }DBGCMD_T;
+
+typedef struct
+{
+	uint8_t ColorId;
+	RB_Vec3f StPos;
+	RB_Vec3f EdPos;
+}SEGMENT_T;
+
+//多角形の幾何学
+//参考: https://gihyo.jp/dev/serial/01/geometry/0006
+typedef struct
+{
+	uint32_t VerticesMaxNum;
+	RB_Vec3f Vertices[VERTICES_MAXID];//頂点
+	RB_Vec3f Normal[VERTICES_MAXID];//法線
+	SEGMENT_T Edges[VERTICES_MAXID];
+}POLYGON_T;
+
+typedef struct
+{
+	POLYGON_T Polygon;
+	float z_top;
+	float z_bottom;
+}POLYGONAL_PRISM_T;
 
 //WidthType
 //0:Center, 1:X軸でy方向に幅, 2:Y軸でx方向に幅, 3:Z軸半径(xy)
@@ -41,10 +66,10 @@ typedef struct
 
 typedef struct
 {
-	uint32_t Id;//Max 20
+	uint32_t Id;//Max OBJECT_MAXID
 	RB_Vec3f CenterPos;
 	RB_Mat3f CenterRot;
-	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:RoundRectAngle
+	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:RoundRectAngle 5:PolygonalPrism
 	bool TFMode;
 	bool Overlap;
 	BOX_T Box;
@@ -52,14 +77,9 @@ typedef struct
 	SSV_T Capsule;
 	SSV_T Cylinder;
 	SSV_T RoundRectAngle;
+	POLYGONAL_PRISM_T PolygonalPrism;
 }OBJECT_T;
 
-typedef struct
-{
-	uint8_t ColorId;
-	RB_Vec3f StPos;
-	RB_Vec3f EdPos;
-}SEGMENT_T;
 
 void DbgCmd_Init(void);
 void DbgCmd_PreStartProc(void);

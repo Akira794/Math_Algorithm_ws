@@ -29,6 +29,7 @@ RBSTATIC RBCONST RB_Mat3f f_RB_Mat3fident = { { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.
 
 RBSTATIC uint8_t f_ThreadCmd;
 RBSTATIC uint32_t f_id = 0u;
+RBSTATIC uint8_t f_PolygonVerticesNum = 0u;
 
 RBSTATIC void ShowCmdStatus(void);
 RBSTATIC void UpdateCmdPos(uint32_t id, uint8_t elem, float step_pos);
@@ -419,6 +420,102 @@ RBSTATIC void ConfigRoundRectAngleObject(POSEDATA_T *Pose, float Radius, float H
 	f_id++;
 }
 
+RBSTATIC float Cross2d(float x1, float y1, float x2, float y2 )
+{
+	return (x1 * y2) - (x2 * y1);
+}
+
+RBSTATIC float CCWUnit(float x1, float y1, float x2, float y2, float x3, float y3 )
+{
+	return Cross2d((x2 - x1), (y2 - y1), (x3 - x2), (y3 - y2));
+}
+
+RBSTATIC float CCW(RB_Vec3f *p1, RB_Vec3f *p2, RB_Vec3f *p3 )
+{
+	return CCWUnit( p1->e[0u], p1->e[1u], p2->e[0u], p2->e[1u], p3->e[0u], p3->e[1u]);
+}
+
+RBSTATIC void ConfigPolygonalPrismObject(uint32_t vertrexnum, RB_Vec3f *Vertices, float z_top, float z_bottom, uint32_t obj_id )
+{
+	RBSTATIC RBCONST float eps = 1E-05f;
+
+	//VERTICES_MAXID 8u
+	if((vertrexnum < 3u) && ((uint32_t)VERTICES_MAXID < vertrexnum))
+	{
+		printf("The number of vertices of the polygon is less than 3\n");
+		RBAssert(0u);
+	}
+
+	float ccw0 = CCW(&Vertices[0u], &Vertices[1u], &Vertices[2u] );
+
+	//ゼロの場合は凸ではない
+	if( ccw0 <= eps )
+	{
+		printf("Polygon is not convex\n");
+		RBAssert(0u);
+	}
+
+	for(uint32_t i = 1u; i < vertrexnum; i++)
+	{
+		RB_Vec3f v1 = Vertices[i];
+		uint32_t remainder_1 = (i + 1u) % vertrexnum;
+		RB_Vec3f v2 = Vertices[remainder_1];
+		uint32_t remainder_2 = (i + 2u) % vertrexnum;
+		RB_Vec3f v3 = Vertices[remainder_2];
+
+		float ccw = CCW(&v1, &v2, &v3 );
+
+		//基準値が符号と異なる、またはゼロの場合はエラー
+		if( ccw0 * ccw <= 0.0f)
+		{
+			printf("Polygon is not convex\n");
+			RBAssert(0u);
+		}
+	}
+
+	POLYGONAL_PRISM_T polygonalprism_obj = { 0 };
+	POLYGON_T polygon_obj = { 0 };
+
+	polygon_obj.VerticesMaxNum = vertrexnum;
+
+	f_ObjectData[obj_id].CenterPos = Vertices[0u];
+	f_ObjectData[obj_id].ShapeType = 5u;
+
+	RB_Vec3f vertical;
+	RB_Vec3fCreate(0.0f, 0.0f, 1.0f, &vertical);
+
+	for(uint32_t i = 0u; i < vertrexnum; i++)
+	{
+		polygon_obj.Vertices[i] = Vertices[i];
+		SEGMENT_T Segment;
+		Segment.StPos = Vertices[i];
+		uint32_t remainder = (i + 1u) % vertrexnum;
+		Segment.EdPos = Vertices[remainder];
+		Segment.ColorId = 0u;
+		polygon_obj.Edges[i] = Segment;
+
+		RB_Vec3f edge, edge_unit;
+		RB_Vec3fSub(&Segment.EdPos, &Segment.StPos, &edge);
+		RB_Vec3fNormalize(&edge, &edge_unit);
+		RB_Vec3fCross(&edge_unit, &vertical, &(polygon_obj.Normal[i]));
+	}
+
+	polygonalprism_obj.z_top = z_top;
+	polygonalprism_obj.z_bottom = z_bottom;
+	polygonalprism_obj.Polygon = polygon_obj;
+
+	f_ObjectData[obj_id].PolygonalPrism = polygonalprism_obj;
+
+	//ポリゴンの頂点数をリセット
+	f_PolygonVerticesNum = 0u;
+}
+
+RBSTATIC void AddVerticesInfo(float x, float y, RB_Vec3f *Vertices )
+{
+	RB_Vec3fCreate(x, y, 0.0f, &Vertices[f_PolygonVerticesNum]);
+	f_PolygonVerticesNum++;
+}
+
 RBSTATIC void DbgCmdSetObjectParam(void)
 {
 	POSEDATA_T Pose = { 0 };
@@ -426,13 +523,27 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f BoxSize;
 	RB_Vec3f Rel;
 
+	RB_Vec3f Vertices[VERTICES_MAXID];
+
+	AddVerticesInfo(900.0f, 700.0f, Vertices );
+	AddVerticesInfo(500.0f, 900.0f, Vertices );
+//	AddVerticesInfo(-100.0f, 900.0f, Vertices );
+	AddVerticesInfo(-300.0f, 700.0f, Vertices );
+	AddVerticesInfo(-300.0f, 400.0f, Vertices );
+//	AddVerticesInfo(-100.0f, 300.0f, Vertices );
+	AddVerticesInfo(500.0f, 300.0f, Vertices );
+//	AddVerticesInfo(900.0f, 400.0f, Vertices );
+
+	ConfigPolygonalPrismObject(f_PolygonVerticesNum, Vertices, 1200.0f, 500.0f, 11u );
+
+#if 1
 #if 1
 	//球体
 	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 100.0f);
 
 	//カプセル
-	ConfigInitPose(0.0f, 0.0f, 600.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	ConfigInitPose(0.0f, -300.0f, 600.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(300.0f, 300.0f, 0.0f, &Rel);
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
@@ -479,7 +590,9 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	ConfigCapsuleObject(&Pose, 100.0f, &Rel);
 
 #endif
+#endif
 
+#if 0
 #if 1
 	ConfigInitPose(600.0f, -100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 300.0f, 500.0f, &BoxSize);
@@ -506,6 +619,34 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3fCreate(200.0f, 50.0f, 600.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 15u);
 
+#endif
+#endif
+
+#if 0
+//Boxの確認用
+	ConfigInitPose(-300.0f, -200.0f, 0.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(300.0f, 100.0f, 200.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 1u);
+
+	ConfigInitPose(-500.0f, -500.0f, 0.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(50.0f, 200.0f, 300.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 2u);
+
+	ConfigInitPose(800.0f, -600.0f, 0.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 200.0f, 400.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 3u);
+
+	ConfigInitPose(-500.0f, 0.0f, 300.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 300.0f, 100.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 4u);
+
+	ConfigInitPose(0.0f, -900.0f, 1000.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(1000.0f, 100.0f, 1000.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 5u);
+
+	ConfigInitPose(300.0f, -200.0f, 100.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	RB_Vec3fCreate(100.0f, 100.0f, 100.0f, &BoxSize);
+	ConfigBoxObject(&Pose, &BoxSize, 0u);
 #endif
 
 #if 0
