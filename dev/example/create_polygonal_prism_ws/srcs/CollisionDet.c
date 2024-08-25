@@ -115,7 +115,6 @@ RBSTATIC bool CollDetSphere_vs_OBB(uint32_t mon_id, uint32_t area_id)
 	return ret;
 }
 
-#if 0
 RBSTATIC void ClosestPtPointSegment(RBCONST RB_Vec3f *CentralPos, RBCONST RB_Vec3f *StPos, RBCONST RB_Vec3f *EdPos, float *t, RB_Vec3f *d)
 {
 	RB_Vec3f rel_ab;
@@ -160,7 +159,6 @@ RBSTATIC void ClosestPtPointSegment(RBCONST RB_Vec3f *CentralPos, RBCONST RB_Vec
 
 	*t = t_ret;
 }
-#endif
 
 //カプセルの情報を取得
 RBSTATIC void GetCapsuleData(uint32_t mon_id, RB_Vec3f *StPos, RB_Vec3f *EdPos, float *radius)
@@ -811,6 +809,224 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 	return ret;
 }
 
+//三角形ABCから点Pへの最近接点qの計算(a,b,c: 三角形上の3点)
+RBSTATIC void ClosestPt_PointTriangle(RB_Vec3f *p, RB_Vec3f *a, RB_Vec3f *b, RB_Vec3f *c, RB_Vec3f *q )
+{
+	RB_Vec3f ab, ac, ap;
+	bool calcflag = true;
+
+	//pが頂点Aの外側の頂点領域の中にあるかどうかチェック
+	RB_Vec3fSub( b, a, &ab );
+	RB_Vec3fSub( c, a, &ac );
+	RB_Vec3fSub( p, a, &ap );
+
+	float d1 = RB_Vec3fDot( &ab, &ap );
+	float d2 = RB_Vec3fDot( &ac, &ap );
+
+	if( ( d1 <= 0.0f ) && ( d2 <= 0.0f ) )
+	{
+		printf("q=a:\n");
+		*q = *a; //重心座標(1,0,0)
+		calcflag = false;
+	}
+
+	//pが頂点Bの外側の頂点領域の中にあるかどうかチェック
+	RB_Vec3f bp;
+	RB_Vec3fSub( p, b, &bp);
+
+	float d3 = RB_Vec3fDot( &ab, &bp );
+	float d4 = RB_Vec3fDot( &ac, &bp );
+
+	if(calcflag)
+	{
+		if( (d3 >= 0.0f) && (d4 <= d3))
+		{
+			printf("q=b:\n");
+			*q = *b; //重心座標(0, 1, 0)
+			calcflag = false;
+		}
+	}
+
+	//pがABの辺領域の中にあるかどうかチェックし、あればpのAB上に対する射影を返す
+	float vc = d1 * d4 - d3 * d2;
+
+	if(calcflag)
+	{
+		if( (vc <= 0.0f) && (d1 >= 0.0f) && (d3 <= 0.0f))
+		{
+			float v = d1 / (d1 - d3);
+			//rerturn (a+(v * ab));//重心位置(1-v, v, 0)
+
+			for(uint8_t i = 0u; i < 3u; i++)
+			{
+				q->e[i] = a->e[i] + ( v * ab.e[i]);
+			}
+			calcflag = false;
+		}
+	}
+
+	//pが頂点Cの外側の頂点領域の中にあるかどうかチェック
+	RB_Vec3f cp;
+	RB_Vec3fSub( p, c, &cp);
+	float d5 = RB_Vec3fDot( &ab, &cp );
+	float d6 = RB_Vec3fDot( &ac, &cp );
+
+	if(calcflag)
+	{
+		if( (d6 >= 0.0f) && (d5 <= d6))
+		{
+			printf("q=c:\n");
+			*q = *c; //重心座標(0,0,1)
+			calcflag = false;
+		}
+	}
+
+	//pがACの辺領域の中にあるかどうかチェックし、あればpのAC上に対する射影を返す
+	float vb = d5 * d2 - d1 * d6;
+
+	if(calcflag)
+	{
+		if( (vb <= 0.0f) && (d2 >= 0.0f) && (d6 <= 0.0f))
+		{
+			float w = d2 / (d2 - d6);
+			//return (a+(w * ac)); //重心座標(1-w, 0, w)
+			for(uint8_t i = 0u; i < 3u; i++)
+			{
+				q->e[i] = a->e[i] + ( w * ac.e[i]);
+			}
+			calcflag = false;
+		}
+	}
+
+	//pがBCの辺領域の中にあるかどうかチェックし、あればpのBC上に対する射影を返す
+	float va = d3 * d6 - d5 * d4;
+
+	if(calcflag)
+	{
+		if( (va <= 0.0f) && ((d4 - d3) >= 0.0f) && ((d5 - d6) >= 0.0f) )
+		{
+			float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+
+			RB_Vec3f bc;
+			RB_Vec3fSub( c, b, &bc);
+			//return (b + w * (c - b)); //重心座標(0,1-w,w)
+			for(uint8_t i = 0u; i < 3u; i++)
+			{
+				q->e[i] = b->e[i] + ( w * bc.e[i]);
+			}
+			calcflag = false;
+		}
+	}
+
+	if(calcflag)
+	{
+		//pはabcの面領域の中にある,最近接点qをその重心座標(u,v,w)を用いて計算
+		float denom = 1.0f / (va + vb + vc);
+		float v = vb * denom;
+		float w = vc * denom;
+
+		//return (a + ab * v + ac * w);// = u * a + v * b + w * c, u = va * denom = 1.0f - v - w
+		for(uint8_t i = 0u; i < 3u; i++)
+		{
+			q->e[i] = a->e[i] + ( ab.e[i] * v) + ( ac.e[i] * w);
+		}
+	}
+}
+
+//==============================================================================
+RBSTATIC uint32_t GetPolygonVertexNum(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	uint32_t num = Polygon_obj.VerticesMaxNum;
+	return num;
+}
+
+RBSTATIC void GetPolygonVertices3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *ans)
+{
+	uint32_t num = GetPolygonVertexNum(PolygonalPrism_obj);
+	RBAssert(idx < num);
+
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	*ans = Polygon_obj.Vertices[idx];
+}
+
+RBSTATIC void GetPolygonInfo3f(POLYGONAL_PRISM_T *PolygonalPrism_obj, uint32_t idx, RB_Vec3f *StPos, RB_Vec3f *EdPos, RB_Vec3f *Normal)
+{
+	uint32_t num = GetPolygonVertexNum(PolygonalPrism_obj);
+	RBAssert(idx < num);
+
+	POLYGON_T Polygon_obj = PolygonalPrism_obj->Polygon;
+	SEGMENT_T Edges = Polygon_obj.Edges[idx];
+
+	*StPos = Edges.StPos;
+	*EdPos = Edges.EdPos;
+	*Normal = Polygon_obj.Normal[idx];
+}
+
+RBSTATIC float GetPolygonalPrism_z_top(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	return	PolygonalPrism_obj->z_top;
+}
+
+RBSTATIC float GetPolygonalPrism_z_bottom(POLYGONAL_PRISM_T *PolygonalPrism_obj)
+{
+	return PolygonalPrism_obj->z_bottom;
+}
+
+//まずは三角形と球体の当たり判定から
+RBSTATIC bool CollDetSphere_vs_Triangle(uint32_t mon_id, uint32_t triangle_id)
+{
+	bool ret = false;
+	bool skip_f = true;
+
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	RB_Vec3f CPos = ObjectData[mon_id].CenterPos;
+	SSV_T Sphere = ObjectData[mon_id].Sphere;
+	float Radius = RB_Vec3fGetElem( &(Sphere.SSV_Size), 0u);
+
+	POLYGONAL_PRISM_T PolygonalPrism_obj = ObjectData[triangle_id].PolygonalPrism;
+
+	RB_Vec3f a, b, c, wcs_q;
+	GetPolygonVertices3f(&PolygonalPrism_obj, 0u, &a);
+	GetPolygonVertices3f(&PolygonalPrism_obj, 1u, &b);
+	GetPolygonVertices3f(&PolygonalPrism_obj, 2u, &c);
+
+	float z_top = GetPolygonalPrism_z_top(&PolygonalPrism_obj);
+	float z_bottom = GetPolygonalPrism_z_bottom(&PolygonalPrism_obj);
+
+	a.e[2u] = z_top;
+	b.e[2u] = z_top;
+	c.e[2u] = z_top;
+
+	ClosestPt_PointTriangle(&CPos, &a, &b, &c, &wcs_q );
+
+	RB_Vec3f rel_q;
+
+#if 1
+	//Debug用
+	//最近接点から球体中心までのベクトルを描画
+	f_SegmentId++;
+	DbgCmd_SetSegment(f_SegmentId, 4u, &wcs_q, &CPos);
+
+
+#endif
+
+	//最近接点wcs_qと相対距離ベクトルrel_qを計算
+	RB_Vec3fSub(&wcs_q, &CPos, &rel_q);
+
+	//相対距離ベクトル rel_q を2乗し、大きさを求める
+	//それが半径の2乗以下ならOBBに球体が接触していると判定
+	if(RB_Vec3fDot(&rel_q,&rel_q) <= (Radius * Radius))
+	{
+		ret = true;
+	}
+
+	return ret;
+}
+
+#if 0
 RBSTATIC bool CollDetSphere_vs_PolygonalPrism(uint32_t mon_id, uint32_t area_id)
 {
 	bool ret = false;
@@ -819,8 +1035,19 @@ RBSTATIC bool CollDetSphere_vs_PolygonalPrism(uint32_t mon_id, uint32_t area_id)
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+	RB_Vec3f CPos = ObjectData[mon_id].CenterPos;
+	SSV_T Sphere = ObjectData[mon_id].Sphere;
+	float Radius = RB_Vec3fGetElem( &(Sphere.SSV_Size), 0u);
+
+	//ClosestPtPointSegment(RBCONST RB_Vec3f *CentralPos, RBCONST RB_Vec3f *StPos, RBCONST RB_Vec3f *EdPos, float *t, RB_Vec3f *d)
+	//円が多角形の辺と接する
+	//円の中心が多角形の中に存在する
+
+
 	return ret;
 }
+#endif
+
 //=========================================================================================
 
 void CollisionDet_Init(void)
@@ -867,6 +1094,7 @@ void CollisionDet_Cycle(void)
 				{
 					case 1u:
 						ret[j] += (uint8_t)CollDetSphere_vs_OBB(i, (j + ObjectBaseNum));
+						//ret[j] += (uint8_t)CollDetSphere_vs_Triangle(i, (j + ObjectBaseNum));
 						break;
 
 					case 2u:
@@ -875,10 +1103,6 @@ void CollisionDet_Cycle(void)
 
 					case 4u:
 						ret[j] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, (j + ObjectBaseNum));
-						break;
-
-					case 5u:
-						ret[j] += (uint8_t)CollDetSphere_vs_PolygonalPrism(i, (j + ObjectBaseNum));
 						break;
 
 					default:

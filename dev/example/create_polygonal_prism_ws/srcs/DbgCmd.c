@@ -527,16 +527,20 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 
 	AddVerticesInfo(900.0f, 700.0f, Vertices );
 	AddVerticesInfo(500.0f, 900.0f, Vertices );
-//	AddVerticesInfo(-100.0f, 900.0f, Vertices );
+	AddVerticesInfo(-100.0f, 900.0f, Vertices );
 	AddVerticesInfo(-300.0f, 700.0f, Vertices );
 	AddVerticesInfo(-300.0f, 400.0f, Vertices );
-//	AddVerticesInfo(-100.0f, 300.0f, Vertices );
+	AddVerticesInfo(-100.0f, 300.0f, Vertices );
 	AddVerticesInfo(500.0f, 300.0f, Vertices );
-//	AddVerticesInfo(900.0f, 400.0f, Vertices );
+	AddVerticesInfo(900.0f, 400.0f, Vertices );
 
-	ConfigPolygonalPrismObject(f_PolygonVerticesNum, Vertices, 1200.0f, 500.0f, 11u );
+	ConfigPolygonalPrismObject(f_PolygonVerticesNum, Vertices, 500.0f, 200.0f, 11u );
 
-#if 1
+	//球体
+	ConfigInitPose(700.0f, 500.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
+	ConfigSphereObject(&Pose, 100.0f);
+
+#if 0
 #if 1
 	//球体
 	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
@@ -699,7 +703,7 @@ uint32_t DbgCmd_GetAreaObjectNum(void)
 	for(uint32_t i = 1u; i < (uint32_t)OBJECT_MAXID; i++)
 	{
 		uint32_t type = ObjectData[i].ShapeType;
-		if(type == 0u)
+		if((type == 0u) || (type == 5u) )
 		{
 			ret++;
 		}
