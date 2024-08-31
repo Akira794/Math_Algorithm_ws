@@ -524,7 +524,7 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	RB_Vec3f Rel;
 
 	RB_Vec3f Vertices[VERTICES_MAXID];
-
+#if 0
 	AddVerticesInfo(900.0f, 700.0f, Vertices );
 //	AddVerticesInfo(500.0f, 900.0f, Vertices );
 	AddVerticesInfo(-100.0f, 900.0f, Vertices );
@@ -539,8 +539,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	//球体
 	ConfigInitPose(700.0f, 500.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	ConfigSphereObject(&Pose, 100.0f);
-
-#if 0
+#endif
+#if 1
 #if 1
 	//球体
 	ConfigInitPose(-300.0f, 0.0f, 500.0f, 0.0f, 0.0f, 0.0f, &Pose);
@@ -596,8 +596,8 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 #endif
 #endif
 
-#if 0
 #if 1
+#if 0
 	ConfigInitPose(600.0f, -100.0f, 900.0f, 0.0f, 0.0f, 0.0f, &Pose);
 	RB_Vec3fCreate(100.0f, 300.0f, 500.0f, &BoxSize);
 	ConfigBlockAreaObject(&Pose, &BoxSize, 0u, 11u);

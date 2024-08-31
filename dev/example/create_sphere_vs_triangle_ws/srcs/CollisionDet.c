@@ -1094,7 +1094,7 @@ void CollisionDet_Cycle(void)
 				{
 					case 1u:
 						ret[j] += (uint8_t)CollDetSphere_vs_OBB(i, (j + ObjectBaseNum));
-						ret[j] += (uint8_t)CollDetSphere_vs_Triangle(i, (j + ObjectBaseNum));
+						//ret[j] += (uint8_t)CollDetSphere_vs_Triangle(i, (j + ObjectBaseNum));
 						break;
 
 					case 2u:
