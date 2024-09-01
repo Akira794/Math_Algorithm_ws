@@ -13,149 +13,6 @@ RBSTATIC float Clamp(float val, float min_val, float max_val)
 	return RB_max(min_val, (RB_min(val, max_val)));
 }
 
-//WCS(p)から見たOBBの最近接点を取得
-//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
-RBSTATIC void ClosestPtPointOBB( RBCONST RB_Vec3f *p, RBCONST OBJECT_T *Object, RB_Vec3f *q)
-{
-	RBCONST RB_Mat3f *m = &Object->CenterRot;
-	RBCONST BOX_T *Box_obj = &Object->BoxData;
-	RBCONST RB_Vec3f *l = &Box_obj->BoxSize;
-
-	RB_Vec3f u[3u] = { 0.0f };
-
-	//Boxの姿勢行列からBoxのローカル座標系の単位ベクトルを取得
-	for(uint8_t i = 0u; i < 3u; i++)
-	{
-		//Areaの方向ベクトル(x)を求める
-		u[i].e[0u] = RB_Mat3fGetElem(m, 0u, i);
-		u[i].e[1u] = RB_Mat3fGetElem(m, 1u, i);
-		u[i].e[2u] = RB_Mat3fGetElem(m, 2u, i);
-	}
-
-	RB_Vec3f d, local_dist;
-	RB_Vec3fSub(p, &(Object->CenterPos), &d);
-
-	float dist;
-
-	//ボックスの中心における結果から開始、そこから段階的に進める
-	*q = Object->CenterPos;
-
-	//各OBBの軸に対して以下を実施
-	for(uint8_t i = 0u; i < 3u; i++)
-	{
-		//ボックスの中心からdの軸に沿った距離を得る
-		dist = RB_Vec3fDot(&d, &u[i]);
-
-		//ボックスの範囲よりも距離が大きい場合、ボックスのdistに固定
-		dist = Clamp(dist, (-(l->e[i])), (l->e[i]));
-
-		//WCS(q)を得るためにその距離だけ軸に沿って進める
-		q->e[0u] += dist * u[i].e[0u];
-		q->e[1u] += dist * u[i].e[1u];
-		q->e[2u] += dist * u[i].e[2u];
-	}
-
-}
-
-//CPosを中心とした球体とarea_idで指定したOBBとの当たり判定用 単体関数
-RBSTATIC bool CollDetSphere_vs_OBB_Unit(RB_Vec3f *CPos, float Radius, uint32_t area_id, uint8_t ColorId)
-{
-	bool ret = false;
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-
-	RB_Vec3f wcs_q;
-	RB_Vec3f rel_q;
-
-	//WCS(p)に対してOBB上(または内部)にあるWCS(p)の最近接点qを返す
-	ClosestPtPointOBB( CPos, &ObjectData[area_id], &wcs_q);
-
-#if 0
-	//Debug用
-	//最近接点から球体中心までのベクトルを描画
-	f_SegmentId++;
-	DbgCmd_SetSegment(f_SegmentId, ColorId, &wcs_q, CPos);
-
-	//DbgCmd_SetVec3f("nearest neighbor point: ", &wcs_q);
-#endif
-
-	//最近接点wcs_qと相対距離ベクトルrel_qを計算
-	RB_Vec3fSub(&wcs_q, CPos, &rel_q);
-
-	//相対距離ベクトル rel_q を2乗し、大きさを求める
-	//それが半径の2乗以下ならOBBに球体が接触していると判定
-	if(RB_Vec3fDot(&rel_q,&rel_q) <= (Radius * Radius))
-	{
-		ret = true;
-	}
-
-	return ret;
-}
-
-//Sphere vs OBB
-RBSTATIC bool CollDetSphere_vs_OBB(uint32_t mon_id, uint32_t area_id)
-{
-	bool ret = false;
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-
-	RB_Vec3f CPos = ObjectData[mon_id].CenterPos;
-
-	SSV_T Sphere = ObjectData[mon_id].SSVData;
-	float Radius = RB_Vec3fGetElem( &(Sphere.SSV_Size), 0u);
-
-	ret = CollDetSphere_vs_OBB_Unit(&CPos, Radius, area_id, 1u);
-
-	return ret;
-}
-
-#if 0
-RBSTATIC void ClosestPtPointSegment(RBCONST RB_Vec3f *CentralPos, RBCONST RB_Vec3f *StPos, RBCONST RB_Vec3f *EdPos, float *t, RB_Vec3f *d)
-{
-	RB_Vec3f rel_ab;
-	RB_Vec3fSub(EdPos, StPos, &rel_ab);
-
-	//ad上にcを投影, しかしDot(ab, ab)による除算は延期
-
-	RB_Vec3f rel_ca;
-	RB_Vec3fSub(CentralPos, StPos, &rel_ca);
-	float t_ret = (RB_Vec3fDot(&rel_ca, &rel_ab));
-
-	if( t_ret <= 0.0f)
-	{
-		//cは範囲[a,b]の外側, aの側に投影, aまでクランプ
-		t_ret = 0.0f;
-		*d = *StPos;
-
-	}
-	else
-	{
-		//denom = ||ab||^2なので常に非負の値
-		float denom = RB_Vec3fDot(&rel_ab, &rel_ab);
-
-		if(t_ret >= denom)
-		{
-			//cは範囲[a,b]の外側、bの側に射影され、bまでクランプ
-			t_ret = 1.0f;
-			*d = *EdPos;
-		}
-		else
-		{
-			//cは範囲[a,b]の内側に射影され、このときまで除算は延期
-			t_ret = t_ret / denom;
-
-			//dの値を計算 (d) = (StPos) + t_ret * (rel_ab)
-			for(uint32_t i = 0u; i < 3u; i++)
-			{
-				d->e[i] = StPos->e[i] + (t_ret * rel_ab.e[i]);
-			}
-		}
-	}
-
-	*t = t_ret;
-}
-#endif
-
 //カプセルの情報を取得
 RBSTATIC void GetCapsuleData(uint32_t mon_id, RB_Vec3f *StPos, RB_Vec3f *EdPos, float *radius)
 {
@@ -165,7 +22,6 @@ RBSTATIC void GetCapsuleData(uint32_t mon_id, RB_Vec3f *StPos, RB_Vec3f *EdPos, 
 	uint8_t type = ObjectData[mon_id].ShapeType;
 	RBAssert(type == 2u);
 
-//	SSV_T Capsule = ObjectData[mon_id].Capsule;
 	SSV_T Capsule = ObjectData[mon_id].SSVData;
 
 	*radius = RB_Vec3fGetElem( &(Capsule.SSV_Size), 0u);
@@ -326,16 +182,6 @@ RBSTATIC void GetBoxAreaEdgeSegments(uint32_t area_id, SEGMENT_T *EdgeData)
 	RB_Vec3fCreate(  lx,  ly,  lz, &(BoxInitArray[6u]));//P6
 	RB_Vec3fCreate( -lx,  ly,  lz, &(BoxInitArray[7u]));//P7
 
-#if 0
-	//CenterRotを反映
-	for(uint32_t i = 0u; i < 8u; i++)
-	{
-		RB_Vec3f RotVec;
-		RB_MulMatVec3f(&ObjectData[area_id].CenterRot, &BoxInitArray[i], &RotVec);
-		RB_Vec3fAdd(&ObjectData[area_id].CenterPos, &RotVec, &BoxInitArray[i]);
-	}
-#endif
-
 	EdgeData[0u].StPos = BoxInitArray[0u];
 	EdgeData[0u].EdPos = BoxInitArray[1u];
 	EdgeData[1u].StPos = BoxInitArray[1u];
@@ -434,90 +280,7 @@ RBSTATIC void GetBoxEdges(uint8_t area_id, RB_Vec3f *Edge_St, RB_Vec3f *Edge_Ed)
 
 }
 
-//線分と線分の当たり判定関数を扱いやすくするための補助関数
-RBSTATIC void GetMonIdClosestPt(RB_Vec3f *Segment_St, RB_Vec3f *Segment_Ed, RB_Vec3f *StPos, RB_Vec3f *EdPos, RB_Vec3f *p1, RB_Vec3f *p2)
-{
-	float t1, t2, dSq;
-
-	dSq = ClosestPt_SegmentSegment(Segment_St, Segment_Ed, StPos, EdPos, &t1, &t2, p1, p2);
-
 #if 0
-	デバッグ用
-	RB_Vec3 Dbg3f;
-	RB_Vec3fCreate(dSq, 0.0f, 0.0f, Dbg3f);
-	DbgCmd_SetVec3f("dSq", &Dbg3f);
-#endif
-}
-
-
-//カプセル vs OBB 当たり判定
-RBSTATIC bool CollDetCapsule_vs_OBB(uint32_t capsule_id, uint32_t area_id)
-{
-	bool ret = false;
-	float R1;
-	RB_Vec3f Cp_St, Cp_Ed;
-	
-	bool skip_f = true;
-
-	//カプセルの情報を取得
-	GetCapsuleData(capsule_id, &Cp_St, &Cp_Ed, &R1);
-
-	//直方体のエッジ(12本)とカプセルの円柱部分(線分)との最近接点を計算する
-
-	//Boxのサイズを取得
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-	RBCONST BOX_T Box_obj = ObjectData[area_id].BoxData;
-	RB_Vec3f l = Box_obj.BoxSize;
-	RB_Vec3f BCpos = ObjectData[area_id].CenterPos;
-
-	//ポリゴンの頂点を指定
-	uint8_t PolygonVertex = 4u;
-	uint8_t ObjectEdgeNum = 3 * PolygonVertex;
-	RB_Vec3f EdgeSt[ObjectEdgeNum];
-	RB_Vec3f EdgeEd[ObjectEdgeNum];
-
-	GetBoxEdges(area_id, EdgeSt, EdgeEd);
-
-	uint8_t i = 0u;
-	uint8_t colorId = 1u;
-
-	//エッジ毎とのカプセル側との最近接点を求める
-	//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
-	while(i < ObjectEdgeNum)
-	{
-		float t1, t2;
-		RB_Vec3f p1, p2;
-		//エッジ[i]とのカプセル内線分でそれぞれの最近接点を求める
-		GetMonIdClosestPt(&Cp_St, &Cp_Ed,&EdgeSt[i], &EdgeEd[i], &p1, &p2);
-
-#if 0
-		//デバッグ用
-			f_SegmentId++;
-			DbgCmd_SetSegment( f_SegmentId, 2u, &p1, &p2);
-
-#endif
-
-	//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
-	//当たりがあればその時点でエッジとの判定を終了
-		if( (CollDetSphere_vs_OBB_Unit(&p1, R1, area_id, colorId)))
-		{
-			ret = true;
-
-#if 0
-			//デバッグ用
-			f_SegmentId++;
-			DbgCmd_SetSegment( f_SegmentId, 1u, &p1, &p2);
-#endif
-
-			break;
-		}
-			//次のエッジへ進む
-		i++;
-	}
-	return ret;
-}
-
 //Sphere vs RectAngle
 RBSTATIC bool CollDetSphere_vs_RectAngle_Unit(RB_Vec3f *CPos, float Radius, RBCONST OBJECT_T *Object, uint8_t ColorId)
 {
@@ -732,6 +495,7 @@ RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_
 
 	return ret;
 }
+#endif
 
 //=========================================================================================
 
@@ -1032,11 +796,12 @@ void CollisionDet_Cycle(void)
 
 					case 2u:
 						//ret[j] += (uint8_t)CollDetCapsule_vs_OBB(i, (j + ObjectBaseNum));
-						ret[j] += IsCollision_Capsule(i, (j + ObjectBaseNum));
+						ret[j] += (uint8_t)IsCollision_Capsule(i, (j + ObjectBaseNum));
 						break;
 
-					case 4u:
-						ret[j] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, (j + ObjectBaseNum));
+					case 3u:
+						//ret[j] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, (j + ObjectBaseNum));
+						ret[j] += (uint8_t)IsCollision_RoundRectAngle(i, (j + ObjectBaseNum));
 						break;
 
 					default:

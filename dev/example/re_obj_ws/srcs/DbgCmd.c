@@ -356,7 +356,7 @@ RBSTATIC void GenerateInitRoundRectAngleObject(RBCONST RB_Vec3f *CPos, RBCONST R
 	SSV_T roundrectangle_data = { 0 };
 
 	f_ObjectData[f_id].CenterPos = *CPos;
-	f_ObjectData[f_id].ShapeType = 4u;
+	f_ObjectData[f_id].ShapeType = 3u;
 
 	RB_Vec3f u_rel, u_vertical, u_height;
 

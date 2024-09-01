@@ -69,7 +69,7 @@ typedef struct
 	uint32_t Id;//Max OBJECT_MAXID
 	RB_Vec3f CenterPos;
 	RB_Mat3f CenterRot;
-	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:Cylinder, 4:RoundRectAngle
+	uint8_t ShapeType;//0:Box, 1:Sphere, 2:Capsule, 3:RoundRectAngle, 4:Cylinder
 	bool TFMode;
 	bool Overlap;
 	BOX_T BoxData;

@@ -94,11 +94,11 @@ RBSTATIC void ReservationObjectId(void)
 				break;
 
 			case 3u:
-				add_id = 26u;
+				add_id = 338u;
 				break;
 
 			case 4u:
-				add_id = 338u;
+				add_id = 26u;
 				break;
 
 			default:
@@ -131,15 +131,11 @@ RBSTATIC void ReservationObjectId(void)
 				break;
 
 			case 3u:
-				printf("Type:Cylinder\n");
-				break;
-
-			case 4u:
 				printf("Type:RoundRectAngle\n");
 				break;
 
-			case 5u:
-				printf("Type:PolygonalPrism: %u \n", PolygonalverticalNum);
+			case 4u:
+				printf("Type:Cylinder\n");
 				break;
 
 			default:
@@ -989,18 +985,9 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 				u_rel = &SSV_obj->Unit_Rel;
 				Rel_Size = SSV_obj->SSV_Size.e[1u];
 				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
-
 				break;
 
 			case 3u:
-				SSV_obj = &Object->SSVData;
-
-				u_rel = &SSV_obj->Unit_Rel;
-				Rel_Size = SSV_obj->SSV_Size.e[1u];
-				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
-				break;
-
-			case 4u:
 				SSV_obj = &Object->SSVData;
 
 				u_rel = &SSV_obj->Unit_Rel;
@@ -1010,7 +997,14 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 				u_height = &SSV_obj->Unit_Height;
 				Height_Size = SSV_obj->SSV_Size.e[2u];
 				RB_Vec3fCreate(((Height_Size)*(u_height->e[0])), ((Height_Size)*(u_height->e[1])), ((Height_Size)*(u_height->e[2])), &HeightPos);
+				break;
 
+			case 4u:
+				SSV_obj = &Object->SSVData;
+
+				u_rel = &SSV_obj->Unit_Rel;
+				Rel_Size = SSV_obj->SSV_Size.e[1u];
+				RB_Vec3fCreate(((Rel_Size)*(u_rel->e[0])), ((Rel_Size)*(u_rel->e[1])), ((Rel_Size)*(u_rel->e[2])), &EndPos);
 				break;
 
 			default:
@@ -1063,7 +1057,7 @@ RBSTATIC void DrawObjectSizeArrow(uint32_t id, OBJECT_T *Object)
 		);//x
 		arrow_num++;
 
-		if(ShapeType == 4u)
+		if(ShapeType == 3u)
 		{
 			RB_Vec3f Height, EndPosHeight;
 			RB_MulMatVec3f(m, &HeightPos, &Height);
@@ -1108,13 +1102,13 @@ RBSTATIC void DrawObject3d(void)
 			case 2u:
 				DrawCapsule(id, objectsolid_val);
 				break;
-
+				
 			case 3u:
-				DrawCylinder(id, objectsolid_val);
+				DrawRoundRectAngle(id, objectsolid_val);
 				break;
 
 			case 4u:
-				DrawRoundRectAngle(id, objectsolid_val);
+				DrawCylinder(id, objectsolid_val);
 				break;
 				
 			default:
