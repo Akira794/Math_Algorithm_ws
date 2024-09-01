@@ -39,6 +39,12 @@ RBSTATIC void KeyCmdSwitch(char cmd);
 RBSTATIC void RequestLoopOut(void);
 RBSTATIC void EventTrigger(void);
 
+RBSTATIC void GenerateBoxAreaObject(RBCONST RB_Vec3f *CPos, float roll, float pitch, float yaw, RBCONST RB_Vec3f *BoxSize, bool AreaType, uint8_t id);
+RBSTATIC void GenerateInitSphereObject(RBCONST RB_Vec3f *CPos, float Radius);
+RBSTATIC void GenerateInitCapsuleObject(RBCONST RB_Vec3f *CPos, RBCONST RB_Vec3f *Rel, float Radius);
+RBSTATIC void GenerateInitRoundRectAngleObject(RBCONST RB_Vec3f *CPos, RBCONST RB_Vec3f *Rel, float Radius, float Height);
+RBSTATIC void DbgCmdSetObjectParam(void);
+
 //====================================================
 
 RBSTATIC RB_Vec3f f_DbgVec3f = { 0.0f };
@@ -387,19 +393,32 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	GenerateInitSphereObject(&CPos, 100.0f);
 
 	//カプセル作成
-	RB_Vec3fCreate(100.0f, -200.0f, 250.0f, &CPos);
+	RB_Vec3fCreate(-700.0f, -700.0f, 500.0f, &CPos);
 	RB_Vec3fCreate(0.0f, 100.0f, 200.0f, &Rel);
 	GenerateInitCapsuleObject(&CPos, &Rel, 100.0f);
 
 	//丸い長方形作成
-	RB_Vec3fCreate(-700.0f, -700.0f, 500.0f, &CPos);
+	RB_Vec3fCreate(100.0f, -100.0f, 100.0f, &CPos);
 	RB_Vec3fCreate(0.0f, 800.0f, 0.0f, &Rel);
-	GenerateInitRoundRectAngleObject(&CPos, &Rel, 200.0f, 600.0f);
+	GenerateInitRoundRectAngleObject(&CPos, &Rel, 50.0f, 800.0f);
 
 //BoxAreaの初期設定
+#if 1
 	RB_Vec3fCreate(500.0f, 100.0f, 500.0f, &CPos);
 	RB_Vec3fCreate(200.0f, 600.0f, 200.0f, &BoxSize);
 	GenerateBoxAreaObject(&CPos, 0.0f, -60.0f, 60.0f, &BoxSize, 0u, 11u);
+#else
+//BoxAreaの初期設定
+	RB_Vec3fCreate(300.0f, 0.0f, 400.0f, &CPos);
+	RB_Vec3fCreate(600.0f, 400.0f, 400.0f, &BoxSize);
+	GenerateBoxAreaObject(&CPos, 0.0f, 0.0f, 0.0f, &BoxSize, 1u, 12u);	
+
+//BoxAreaの初期設定
+	RB_Vec3fCreate(300.0f, 0.0f, 400.0f, &CPos);
+	RB_Vec3fCreate(600.0f, 400.0f, 400.0f, &BoxSize);
+	GenerateBoxAreaObject(&CPos, 0.0f, 0.0f, 0.0f, &BoxSize, 1u, 11u);
+#endif
+
 
 #if 0
 //BoxAreaの初期設定
@@ -500,6 +519,7 @@ void DbgCmd_Destroy(void)
 	KB_close();
 }
 
+//==========================================================================
 void DbgCmd_SetOverlapStatus(uint32_t id, bool status)
 {
 	f_ObjectData[id].Overlap = status;

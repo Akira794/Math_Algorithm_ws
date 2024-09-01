@@ -316,118 +316,8 @@ RBSTATIC bool CollDetSphere_vs_RectAngle_Unit(RB_Vec3f *CPos, float Radius, RBCO
 //TODO 処理を関数の関数に分ける必要あり
 RBSTATIC bool CollDetRoundRectAngle_vs_OBB(uint32_t rectangle_id, uint32_t area_id)
 {
-	bool ret = false;
-	bool skip_f = true;
+???~=======OK=~===================================================================--
 
-	OBJECT_T ObjectData[OBJECT_MAXID];
-	DbgCmd_GetPoseCmd(ObjectData);
-
-	SSV_T RoundRectAngle_obj = ObjectData[rectangle_id].SSVData;
-
-	RB_Vec3f CenterPos = ObjectData[rectangle_id].CenterPos;
-	RB_Mat3f CenterRot = ObjectData[rectangle_id].CenterRot;
-
-	RB_Vec3f u[3u] = { 0.0f };
-	RB_Vec3f now_u[3u] = { 0.0f };
-
-	u[0u] = RoundRectAngle_obj.Unit_Rel;
-	u[1u] = RoundRectAngle_obj.Unit_Height;
-	RB_Vec3fCross(&u[0u], &u[1u], &u[2u]);
-
-	//姿勢を単位ベクトルに反映
-	for(uint8_t i = 0u; i < 3u; i++)
-	{
-		RB_MulMatVec3f(&CenterRot, &u[i], &now_u[i]);
-	}
-
-	//RectAngleのサイズを指定
-	float Radius = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 0u);
-
-	RB_Vec3f length = { 0.0f };
-	length.e[0u] = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 1u);
-	length.e[1u] = RB_Vec3fGetElem( &(RoundRectAngle_obj.SSV_Size), 2u);	
-
-	RB_Vec3f RelOfs, WidthOfs, DiagonalOfs;
-
-	RB_Vec3fCreate(((length.e[0u])*(now_u[0u].e[0u])), ((length.e[0u])*(now_u[0u].e[1u])), ((length.e[0u])*(now_u[0u].e[2u])), &RelOfs);
-	RB_Vec3fCreate(((length.e[1u])*(now_u[1u].e[0u])), ((length.e[1u])*(now_u[1u].e[1u])), ((length.e[1u])*(now_u[1u].e[2u])), &WidthOfs);
-	RB_Vec3fAdd(&RelOfs, &WidthOfs, &DiagonalOfs);
-
-	for(uint8_t i = 0u; i < 3u; i++)
-	{
-		RelOfs.e[i] += CenterPos.e[i];
-		WidthOfs.e[i] += CenterPos.e[i];
-		DiagonalOfs.e[i] += CenterPos.e[i];
-	}
-
-//TODO RectAngleのエッジを作成する関数に分ける必要あり
-	RB_Vec3f RectAngle_Edge_St[4u] = { 0.0f };
-	RB_Vec3f RectAngle_Edge_Ed[4u] = { 0.0f };
-
-	RectAngle_Edge_St[0u] = CenterPos;
-	RectAngle_Edge_Ed[0u] = RelOfs;
-
-	RectAngle_Edge_St[1u] = RelOfs;
-	RectAngle_Edge_Ed[1u] = DiagonalOfs;
-
-	RectAngle_Edge_St[2u] = DiagonalOfs;
-	RectAngle_Edge_Ed[2u] = WidthOfs;
-
-	RectAngle_Edge_St[3u] = WidthOfs;
-	RectAngle_Edge_Ed[3u] = CenterPos;
-
-#if 0
-	//デバッグ用
-	for(uint8_t i = 0u; i < 4u; i++)
-	{
-		f_SegmentId++;
-		DbgCmd_SetSegment( f_SegmentId, 2u, &RectAngle_Edge_St[i], &RectAngle_Edge_Ed[i]);
-	}
-#endif
-
-	//直方体のエッジ(12本)とカプセルの円柱部分(線分)との最近接点を計算する
-
-	//Boxのサイズを取得
-	RBCONST BOX_T Box_obj = ObjectData[area_id].BoxData;
-	RB_Vec3f l = Box_obj.BoxSize;
-	RB_Vec3f BCpos = ObjectData[area_id].CenterPos;
-
-	//ポリゴンの頂点を指定
-	uint8_t PolygonVertex = 4u;
-	uint8_t ObjectEdgeNum = 3 * PolygonVertex;
-	uint8_t ObjectVertexNum = 2 * PolygonVertex;
-
-	RB_Vec3f EdgeSt[ObjectEdgeNum];
-	RB_Vec3f EdgeEd[ObjectEdgeNum];
-
-	GetBoxEdges(area_id, EdgeSt, EdgeEd);
-
-//RectAngle用のObjectを作成
-//TODO ここも関数化すると便利
-	OBJECT_T RectAngle_obj;
-	RB_Vec3f RectAngleSize;
-	RB_Vec3fCreate((length.e[0u] * 0.5f), (length.e[1u] * 0.5f), 0.0f, &RectAngleSize);
-
-	RB_Vec3f CenterRel, CenterWidth, CenterOfs;
-	RB_Vec3fCreate(((RectAngleSize.e[0u])*(now_u[0u].e[0u])), 
-					((RectAngleSize.e[0u])*(now_u[0u].e[1u])), 
-					((RectAngleSize.e[0u])*(now_u[0u].e[2u])), &CenterRel);
-
-	RB_Vec3fCreate(((RectAngleSize.e[1u])*(now_u[1u].e[0u])), 
-					((RectAngleSize.e[1u])*(now_u[1u].e[1u])), 
-					((RectAngleSize.e[1u])*(now_u[1u].e[2u])), &CenterWidth);
-
-	RB_Vec3fAdd(&CenterRel, &CenterWidth, &CenterOfs);
-	RB_Vec3fAdd(&CenterPos, &CenterOfs, &(RectAngle_obj.CenterPos));
-
-	RB_Mat3fCreate(
-		now_u[0u].e[0u], now_u[1u].e[0u], now_u[2u].e[0u],
-		now_u[0u].e[1u], now_u[1u].e[1u], now_u[2u].e[1u],
-		now_u[0u].e[2u], now_u[1u].e[2u], now_u[2u].e[2u],
-		&(RectAngle_obj.CenterRot)
-	);
-
-	RectAngle_obj.BoxData.BoxSize = RectAngleSize;
 
 	//直方体のエッジ(12本)に対する丸い長方形のエッジ上の最近接点を計算する
 	if(skip_f)
@@ -633,9 +523,9 @@ RBSTATIC bool IsCollision_Capsule(uint32_t capsule_id, uint32_t area_id)
 	DbgCmd_GetPoseCmd(ObjectData);
 
 	//カプセルの最新位置情報を取得
-	RB_Vec3f Cp_St, Cp_Ed;
+	RB_Vec3f CapsulePos[2u] = { 0.0f };
 	float Radius;
-	GetCapsuleData(capsule_id, &Cp_St, &Cp_Ed, &Radius);
+	GetCapsuleData(capsule_id, &CapsulePos[0u], &CapsulePos[1u], &Radius);
 
 //ボックスエリアの情報を取得===========================================================
 	OBJECT_T BoxObject = ObjectData[area_id];
@@ -648,30 +538,26 @@ RBSTATIC bool IsCollision_Capsule(uint32_t capsule_id, uint32_t area_id)
 //======================================================================================
 
 //======BoxAreaのタイプで内包判定, 衝突判定を実施する=========//
-
-	RB_Vec3f Rel_StPos, Rel_EdPos;
-	RB_Vec3f Local_StPos, Local_EdPos;
-	bool retSt = false;
-	bool retEd = false;
-
-	//Box中心からの距離を計算
-	RB_Vec3fSub(&Cp_St, &BoxObject.CenterPos, &Rel_StPos);
-	RB_Vec3fSub(&Cp_Ed, &BoxObject.CenterPos, &Rel_EdPos);
-	
-	//Box基準の座標系位置に変換
-	ConvBoxAreaLocalPos(&Rel_StPos, BoxUnit, &Local_StPos);
-	ConvBoxAreaLocalPos(&Rel_EdPos, BoxUnit, &Local_EdPos);
+	RB_Vec3f Local_Pos[2u] = { 0.0f };
+	for(uint8_t i = 0u; i < 2u; i++)
+	{
+		RB_Vec3f Rel;
+		//Box中心からの距離を計算
+		RB_Vec3fSub(&CapsulePos[i], &BoxObject.CenterPos, &Rel);
+		//Box基準の座標系位置に変換
+		ConvBoxAreaLocalPos(&Rel, BoxUnit, &Local_Pos[i]);
+	}
 
 	//WorkAreaの場合
 	if(BoxAreaType)
 	{
-		retSt = IsOutSideSphere_OBB(&Local_StPos, Radius, &BoxSize);
-		retEd = IsOutSideSphere_OBB(&Local_EdPos, Radius, &BoxSize);
-
-		//始点 or 終点 がBoxAreaに接触
-		if(retSt || retEd)
+		for(uint8_t i = 0u; i < 2u; i++)
 		{
-			ret = true;
+			if(IsOutSideSphere_OBB(&Local_Pos[i], Radius, &BoxSize))
+			{
+				ret = true;
+				break;
+			}
 		}
 	}
 	//BlockAreaの場合
@@ -680,12 +566,171 @@ RBSTATIC bool IsCollision_Capsule(uint32_t capsule_id, uint32_t area_id)
 		//Boxのエッジを取得する
 		SEGMENT_T BoxEdges[12u];
 		GetBoxAreaEdgeSegments(area_id, BoxEdges);
-		ret = IsOverlapCapsule_OBB(&Local_StPos, &Local_EdPos, Radius, &BoxSize, BoxEdges);
+		ret = IsOverlapCapsule_OBB(&Local_Pos[0u], &Local_Pos[1u], Radius, &BoxSize, BoxEdges);
 	}
 
 	return ret;
 }
 
+RBSTATIC void GetRoundRectAngleData(uint32_t rectangle_id, SEGMENT_T *EdgeData, RB_Vec3f *now_u, RB_Vec3f *SSVSize)
+{
+	OBJECT_T ObjectData[OBJECT_MAXID];
+	DbgCmd_GetPoseCmd(ObjectData);
+
+	OBJECT_T RectAngleObject = ObjectData[rectangle_id];
+
+	uint8_t type = RectAngleObject.ShapeType;
+	RBAssert(type == 3u);
+
+	SSV_T rectangle_data = RectAngleObject.SSVData;
+
+	RB_Vec3f CenterPos = RectAngleObject.CenterPos;
+	RB_Mat3f CenterRot = RectAngleObject.CenterRot;
+
+	RB_Vec3f u[3u] = { 0.0f };
+	//RB_Vec3f now_u[3u] = { 0.0f };
+
+	u[0u] = rectangle_data.Unit_Rel;
+	u[1u] = rectangle_data.Unit_Height;
+	RB_Vec3fCross(&u[0u], &u[1u], &u[2u]);
+
+	//姿勢を単位ベクトルに反映
+	for(uint8_t i = 0u; i < 3u; i++)
+	{
+		RB_MulMatVec3f(&CenterRot, &u[i], &now_u[i]);
+	}
+
+	//RectAngleのサイズを指定
+	float Radius = RB_Vec3fGetElem( &(rectangle_data.SSV_Size), 0u);
+	float Rel_Size = RB_Vec3fGetElem( &(rectangle_data.SSV_Size), 1u);
+	float Height_Size = RB_Vec3fGetElem( &(rectangle_data.SSV_Size), 2u);
+
+	SSVSize->e[0u] = Radius;
+	SSVSize->e[1u] = Rel_Size;
+	SSVSize->e[2u] = Height_Size;
+
+	RB_Vec3f RelOfs, HeightOfs, DiagonalOfs;
+
+	RB_Vec3fCreate(((Rel_Size)*(now_u[0u].e[0u])), ((Rel_Size)*(now_u[0u].e[1u])), ((Rel_Size)*(now_u[0u].e[2u])), &RelOfs);
+	RB_Vec3fCreate(((Height_Size)*(now_u[1u].e[0u])), ((Height_Size)*(now_u[1u].e[1u])), ((Height_Size)*(now_u[1u].e[2u])), &HeightOfs);
+	RB_Vec3fAdd(&RelOfs, &HeightOfs, &DiagonalOfs);
+
+	RB_Vec3f Vertexs[4u] = { 0.0f }; 
+	Vertexs[0u] = CenterPos;
+	RB_Vec3fAdd(&CenterPos, &RelOfs,&Vertexs[1u]);
+	RB_Vec3fAdd(&CenterPos, &DiagonalOfs,&Vertexs[2u]);
+	RB_Vec3fAdd(&CenterPos, &HeightOfs,&Vertexs[3u]);
+
+	EdgeData[0u].StPos = CenterPos;
+	EdgeData[0u].EdPos = Vertexs[1u];
+	EdgeData[1u].StPos = Vertexs[1u];
+	EdgeData[1u].EdPos = Vertexs[2u];
+	EdgeData[2u].StPos = Vertexs[2u];
+	EdgeData[2u].EdPos = Vertexs[3u];
+	EdgeData[3u].StPos = Vertexs[3u];
+	EdgeData[3u].EdPos = Vertexs[0u];
+
+#if 0
+	//デバッグ用
+	for(uint8_t i = 0u; i < 4u; i++)
+	{
+		f_SegmentId++;
+		DbgCmd_SetSegment( f_SegmentId, 2u, &EdgeData[i].StPos, &EdgeData[i].EdPos);
+	}
+#endif
+}
+
+RBSTATIC void GenerateRectAngleBoxObject(RBCONST RB_Vec3f *CPos, RBCONST RB_Vec3f *now_u, RBCONST RB_Vec3f *SSVSize, RB_Vec3f *UpdatePos, RB_Vec3f *UnitList, RB_Vec3f *RectAngleSize)
+{
+
+//RectAngle用のObjectを作成
+	OBJECT_T RectAngle_obj;
+	RB_Vec3fCreate(( (SSVSize->e[1u]) * 0.5f), ( (SSVSize->e[2u]) * 0.5f), 0.0f, RectAngleSize);
+
+	RB_Vec3f CenterRel, CenterHeight, CenterOfs;
+	RB_Vec3fCreate(((RectAngleSize->e[0u])*( (now_u[0u].e[0u]) )), 
+					((RectAngleSize->e[0u])*( (now_u[0u].e[1u]) )), 
+					((RectAngleSize->e[0u])*( (now_u[0u].e[2u]) )), &CenterRel);
+
+	RB_Vec3fCreate(((RectAngleSize->e[1u])*( (now_u[1u].e[0u]) )), 
+					((RectAngleSize->e[1u])*( (now_u[1u].e[1u]) )), 
+					((RectAngleSize->e[1u])*( (now_u[1u].e[2u]) )), &CenterHeight);
+
+	RB_Vec3fAdd(&CenterRel, &CenterHeight, &CenterOfs);
+	RB_Vec3fAdd(CPos, &CenterOfs, UpdatePos);
+
+	UnitList[0u].e[0u] = now_u[0u].e[0u];
+	UnitList[0u].e[1u] = now_u[0u].e[1u];
+	UnitList[0u].e[2u] = now_u[0u].e[2u];
+
+	UnitList[1u].e[0u] = now_u[1u].e[0u];
+	UnitList[1u].e[1u] = now_u[1u].e[1u];
+	UnitList[1u].e[2u] = now_u[1u].e[2u];
+
+	UnitList[2u].e[0u] = now_u[2u].e[0u];
+	UnitList[2u].e[1u] = now_u[2u].e[1u];
+	UnitList[2u].e[2u] = now_u[2u].e[2u];
+}
+
+//================================================================================================
+RBSTATIC bool IsOverlapRoundRectAngle_OBB(SEGMENT_T *RectAngleVertexs, float Radius, SEGMENT_T *BoxEdges, RBCONST RB_Vec3f *BoxSize,
+	RB_Vec3f *UpdatePos, RB_Vec3f *UnitList, RB_Vec3f *RectAngleSize )
+{
+	bool flag = false;
+	bool ret = false;
+	uint8_t i = 0u;
+	while(i < 12u)
+	{
+		uint8_t n = 0u;
+		//4u: RectAngleのEdge
+		while(n < 4u)
+		{
+			//OBB上のエッジとRectAngle上のエッジでそれぞれの最近接点(RectAngle_ClosestPt, Box_ClosestPt)を計算
+			float t, s, dSq;
+			RB_Vec3f RectAngle_ClosestPt, Box_ClosestPt;
+			//TODO 必要な回数を減らす
+			//線分と線分の最近接点を計算する
+			dSq = ClosestPt_SegmentSegment(&(RectAngleVertexs[n].StPos), &(RectAngleVertexs[n].EdPos), 
+			&(BoxEdges[i].StPos), &(BoxEdges[i].EdPos), &t, &s, &RectAngle_ClosestPt, &Box_ClosestPt);
+
+#if 0
+//TODO ここまだあやしい
+			//RectAngle座標系ベースの位置に変換する
+			RB_Vec3f Rel, LocalPos_Box_ClosestPt;
+			RB_Vec3fSub(&Box_ClosestPt, UpdatePos, &Rel);
+			ConvBoxAreaLocalPos(&Rel, UnitList, &LocalPos_Box_ClosestPt);
+
+//====================================================================================
+			//RectAngleをOBB と OBB上の球体 の当たり判定 
+			if( (n == 0u) && (IsOverlapSphere_OBB(&LocalPos_Box_ClosestPt, Radius, RectAngleSize) ) )
+			{
+				flag = true;
+				break;
+			}
+#endif
+//====================================================================================
+			//OBBとRectAngle上の球体と当たり判定
+			//求めた最近接点を中心とした球体の領域を作り、OBBと当たり判定を行う
+			//当たりがあればその時点でエッジとの判定を終了
+			if(IsOverlapSphere_OBB(&RectAngle_ClosestPt, Radius, BoxSize))
+			{
+				flag = true;
+				break;
+			}
+//====================================================================================
+			n++;
+		}
+		//衝突と判定したらwhileループを終了、抜け出す
+		if(flag)
+		{
+			ret = true;
+			break;
+		}
+		//次のエッジへ進む
+		i++;
+	}
+	return ret;
+}
 
 RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id)
 {
@@ -694,8 +739,13 @@ RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
 
+	SEGMENT_T RectAngleEdge[4u];
 //RoundRectAngleの最新位置情報を取得
+	RB_Vec3f unit[3u] = { 0.0f };
+	RB_Vec3f SSVSize = { 0.0f };
+	GetRoundRectAngleData(rectangle_id, RectAngleEdge, unit, &SSVSize);
 
+	float Radius = SSVSize.e[0u];
 
 //ボックスエリアの情報を取得===========================================================
 	OBJECT_T BoxObject = ObjectData[area_id];
@@ -706,31 +756,35 @@ RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id
 	RB_Vec3f BoxSize = BoxData.BoxSize;
 	bool BoxAreaType = BoxData.AreaType;
 //======================================================================================
-#if 0
+
 //======BoxAreaのタイプで内包判定, 衝突判定を実施する=========//
-	RB_Vec3f Rel_StPos, Rel_EdPos;
-	RB_Vec3f Local_StPos, Local_EdPos;
-	bool retSt = false;
-	bool retEd = false;
+	RB_Vec3f LocalVertex[4u] = { 0.0f };
+	//
+	//P3----------P2
+	// |          |
+	// |          |
+	//P0 -------- P1
+	//
 
 	//Box中心からの距離を計算
-	RB_Vec3fSub(&Cp_St, &BoxObject.CenterPos, &Rel_StPos);
-	RB_Vec3fSub(&Cp_Ed, &BoxObject.CenterPos, &Rel_EdPos);
-	
 	//Box基準の座標系位置に変換
-	ConvBoxAreaLocalPos(&Rel_StPos, BoxUnit, &Local_StPos);
-	ConvBoxAreaLocalPos(&Rel_EdPos, BoxUnit, &Local_EdPos);
-
+	for(uint8_t i = 0u; i < 4u; i++)
+	{	
+		RB_Vec3f Rel;
+		RB_Vec3fSub(&(RectAngleEdge[i].StPos), &BoxObject.CenterPos, &Rel);
+		ConvBoxAreaLocalPos(&Rel, BoxUnit, &LocalVertex[i]);
+	}
+	
 	//WorkAreaの場合
 	if(BoxAreaType)
 	{
-		retSt = IsOutSideSphere_OBB(&Local_StPos, Radius, &BoxSize);
-		retEd = IsOutSideSphere_OBB(&Local_EdPos, Radius, &BoxSize);
-
-		//始点 or 終点 がBoxAreaに接触
-		if(retSt || retEd)
+		for(uint8_t i = 0u; i < 4u; i++)
 		{
-			ret = true;
+			if(IsOutSideSphere_OBB(&LocalVertex[i], Radius, &BoxSize))
+			{
+				ret = true;
+				break;
+			}
 		}
 	}
 	//BlockAreaの場合
@@ -739,13 +793,29 @@ RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id
 		//Boxのエッジを取得する
 		SEGMENT_T BoxEdges[12u];
 		GetBoxAreaEdgeSegments(area_id, BoxEdges);
-		ret = IsOverlapCapsule_OBB(&Local_StPos, &Local_EdPos, Radius, &BoxSize, BoxEdges);
+
+		SEGMENT_T LCS_RectAngleEdge[4u];
+		LCS_RectAngleEdge[0u].StPos = LocalVertex[0u];
+		LCS_RectAngleEdge[0u].EdPos = LocalVertex[1u];
+		LCS_RectAngleEdge[1u].StPos = LocalVertex[1u];
+		LCS_RectAngleEdge[1u].EdPos = LocalVertex[2u];
+		LCS_RectAngleEdge[2u].StPos = LocalVertex[2u];
+		LCS_RectAngleEdge[2u].EdPos = LocalVertex[3u];
+		LCS_RectAngleEdge[3u].StPos = LocalVertex[3u];
+		LCS_RectAngleEdge[3u].EdPos = LocalVertex[0u]; 
+
+		RB_Vec3f RectAngleCenterPos = { 0.0f };
+		RB_Vec3f RectAngleUint[3u] = { 0.0f };
+		RB_Vec3f RectAngleSize = { 0.0f };
+
+		GenerateRectAngleBoxObject(&(RectAngleEdge[0u].StPos), unit, &SSVSize, &RectAngleCenterPos, RectAngleUint, &RectAngleSize);
+		ret = IsOverlapRoundRectAngle_OBB(LCS_RectAngleEdge, Radius, BoxEdges, &BoxSize, &RectAngleCenterPos, RectAngleUint, &RectAngleSize);
+
 	}
-#endif
+
 	return ret;
+
 }
-
-
 
 void CollisionDet_Init(void)
 {
@@ -790,17 +860,14 @@ void CollisionDet_Cycle(void)
 				switch(GetObjectType(i))
 				{
 					case 1u:
-						//ret[j] += (uint8_t)CollDetSphere_vs_OBB(i, (j + ObjectBaseNum));
-						ret[j] += (uint8_t)IsCollision_Sphere(i, (j + ObjectBaseNum));
+						//ret[j] += (uint8_t)IsCollision_Sphere(i, (j + ObjectBaseNum));
 						break;
 
 					case 2u:
-						//ret[j] += (uint8_t)CollDetCapsule_vs_OBB(i, (j + ObjectBaseNum));
-						ret[j] += (uint8_t)IsCollision_Capsule(i, (j + ObjectBaseNum));
+						//ret[j] += (uint8_t)IsCollision_Capsule(i, (j + ObjectBaseNum));
 						break;
 
 					case 3u:
-						//ret[j] += (uint8_t)CollDetRoundRectAngle_vs_OBB(i, (j + ObjectBaseNum));
 						ret[j] += (uint8_t)IsCollision_RoundRectAngle(i, (j + ObjectBaseNum));
 						break;
 
