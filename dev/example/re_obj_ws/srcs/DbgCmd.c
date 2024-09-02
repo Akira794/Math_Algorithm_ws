@@ -398,16 +398,21 @@ RBSTATIC void DbgCmdSetObjectParam(void)
 	GenerateInitCapsuleObject(&CPos, &Rel, 100.0f);
 
 	//丸い長方形作成
-	RB_Vec3fCreate(100.0f, -100.0f, 100.0f, &CPos);
-	RB_Vec3fCreate(0.0f, 800.0f, 0.0f, &Rel);
+	RB_Vec3fCreate(0.0f, 170.0f, 100.0f, &CPos);
+	RB_Vec3fCreate(900.0f, 200.0f, 0.0f, &Rel);
 	GenerateInitRoundRectAngleObject(&CPos, &Rel, 50.0f, 800.0f);
 
 //BoxAreaの初期設定
 #if 1
 	RB_Vec3fCreate(500.0f, 100.0f, 500.0f, &CPos);
 	RB_Vec3fCreate(200.0f, 600.0f, 200.0f, &BoxSize);
-	GenerateBoxAreaObject(&CPos, 0.0f, -60.0f, 60.0f, &BoxSize, 0u, 11u);
+	GenerateBoxAreaObject(&CPos, 0.0f, 45.0f, 20.0f, &BoxSize, 0u, 11u);
 #else
+//BoxAreaの初期設定
+	RB_Vec3fCreate(400.0f, 200.0f, 700.0f, &CPos);
+	RB_Vec3fCreate(700.0f, 700.0f, 700.0f, &BoxSize);
+	GenerateBoxAreaObject(&CPos, 0.0f, 0.0f, 0.0f, &BoxSize, 1u, 12u);	
+
 //BoxAreaの初期設定
 	RB_Vec3fCreate(300.0f, 0.0f, 400.0f, &CPos);
 	RB_Vec3fCreate(600.0f, 400.0f, 400.0f, &BoxSize);
