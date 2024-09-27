@@ -380,6 +380,67 @@ RBSTATIC bool CollDetSphere_vs_OBB_Unit(RB_Vec3f *CPos, float Radius, OBJECT_T *
 	return ret;
 }
 
+
+RBSTATIC bool CollDetAABB_vs_AABB(RB_Vec3f *BoxSize, RB_Vec3f *TargetMin, RB_Vec3f *TargetMax)
+{
+	uint8_t result = 0u;
+	bool ret = true;
+
+	RB_Vec3f Boxmin, Boxmax;
+	RB_Vec3fCreate( -(BoxSize->e[0u]),  -(BoxSize->e[1u]),  -(BoxSize->e[2u]), &Boxmin);
+	RB_Vec3fCreate(  (BoxSize->e[0u]),   (BoxSize->e[1u]),   (BoxSize->e[2u]), &Boxmax);
+
+	for(uint8_t i = 0u; i < 3u; i++)
+	{
+		if(( (Boxmin.e[i]) <= (TargetMax->e[i]) ) && ( (TargetMin->e[i]) <= (Boxmax.e[i]) ) )
+		{
+			result += 1u;
+		}
+	}
+	if(result < 3u)
+	{
+		ret = false;
+	}
+	return ret;
+}
+
+RBSTATIC void GetRoundRectAngleAABBMinMax(RB_Vec3f *LCSPos, float Radius, RB_Vec3f *Min, RB_Vec3f *Max)
+{
+	RB_Vec3f MinPos = LCSPos[0u];
+	RB_Vec3f MaxPos = LCSPos[0u];
+
+	for(uint8_t i = 1u; i < 3u; i++)
+	{
+		MinPos.e[0u] = RB_min(MinPos.e[0u], LCSPos[i].e[0u]);
+		MinPos.e[1u] = RB_min(MinPos.e[1u], LCSPos[i].e[1u]);
+		MinPos.e[2u] = RB_min(MinPos.e[2u], LCSPos[i].e[2u]);
+
+		MaxPos.e[0u] = RB_max(MaxPos.e[0u], LCSPos[i].e[0u]);
+		MaxPos.e[1u] = RB_max(MaxPos.e[1u], LCSPos[i].e[1u]);
+		MaxPos.e[2u] = RB_max(MaxPos.e[2u], LCSPos[i].e[2u]);
+	}
+
+	Min->e[0u] = MinPos.e[0u] - Radius;
+	Min->e[1u] = MinPos.e[1u] - Radius;
+	Min->e[2u] = MinPos.e[2u] - Radius;
+
+	Max->e[0u] = MaxPos.e[0u] + Radius;
+	Max->e[1u] = MaxPos.e[1u] + Radius;
+	Max->e[2u] = MaxPos.e[2u] + Radius;
+}
+
+RBSTATIC void GetCapsuleAABBMinMax(RB_Vec3f *LCSPos, float Radius, RB_Vec3f *Min, RB_Vec3f *Max)
+{
+		Min->e[0u] = RB_min(LCSPos[0u].e[0u], LCSPos[1u].e[0u]) - Radius;
+		Min->e[1u] = RB_min(LCSPos[0u].e[1u], LCSPos[1u].e[1u]) - Radius;
+		Min->e[2u] = RB_min(LCSPos[0u].e[2u], LCSPos[1u].e[2u]) - Radius;
+
+		Max->e[0u] = RB_max(LCSPos[0u].e[0u], LCSPos[1u].e[0u]) + Radius;
+		Max->e[1u] = RB_max(LCSPos[0u].e[1u], LCSPos[1u].e[1u]) + Radius;
+		Max->e[2u] = RB_max(LCSPos[0u].e[2u], LCSPos[1u].e[2u]) + Radius;
+}
+
+
 RBSTATIC void ConvBoxAreaLocalPos(RBCONST RB_Vec3f *Rel, RBCONST RB_Vec3f *BoxUnit, RB_Vec3f *LocalPos)
 {
 	LocalPos->e[0u] = RB_Vec3fDot(Rel, &BoxUnit[0u]);
@@ -509,6 +570,7 @@ RBSTATIC bool IsOverlapCapsule_OBB(RB_Vec3f *LCS_StPos, RB_Vec3f *LCS_EdPos, flo
 RBSTATIC bool IsCollision_Capsule(uint32_t capsule_id, uint32_t area_id)
 {
 	bool ret = false;
+	static bool flag = true;
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
@@ -554,10 +616,24 @@ RBSTATIC bool IsCollision_Capsule(uint32_t capsule_id, uint32_t area_id)
 	//BlockAreaの場合
 	else
 	{
-		//Boxのエッジを取得する
-		SEGMENT_T BoxEdges[12u];
-		GetBoxAreaEdgeSegments(area_id, BoxEdges);
-		ret = IsOverlapCapsule_OBB(&Local_Pos[0u], &Local_Pos[1u], Radius, &BoxSize, BoxEdges);
+		RB_Vec3f CapsuleMin, CapsuleMax;
+		GetCapsuleAABBMinMax(Local_Pos, Radius, &CapsuleMin, &CapsuleMax);
+		if( CollDetAABB_vs_AABB( &BoxSize, &CapsuleMin, &CapsuleMax))
+		{
+			if(flag)
+			{
+				printf("<INFO>: Change Narrow Collidion Detection ===============================================\n");
+				flag = false;
+			}
+						//Boxのエッジを取得する
+			SEGMENT_T BoxEdges[12u];
+			GetBoxAreaEdgeSegments(area_id, BoxEdges);
+			ret = IsOverlapCapsule_OBB(&Local_Pos[0u], &Local_Pos[1u], Radius, &BoxSize, BoxEdges);
+		}
+		else
+		{
+			flag = true;
+		}
 	}
 
 	return ret;
@@ -877,6 +953,7 @@ RBCONST RB_Vec3f *BoxSize, RB_Vec3f *RectAngleUnit, RB_Vec3f *RectAngleSize )
 RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id)
 {
 	bool ret = false;
+	static bool flag = true;
 
 	OBJECT_T ObjectData[OBJECT_MAXID];
 	DbgCmd_GetPoseCmd(ObjectData);
@@ -932,7 +1009,21 @@ RBSTATIC bool IsCollision_RoundRectAngle(uint32_t rectangle_id, uint32_t area_id
 	//BlockAreaの場合
 	else
 	{
-		ret = CollDetRoundRectAngle_vs_OBB(rectangle_id, area_id);
+		RB_Vec3f RRAMin, RRAMax;
+		GetRoundRectAngleAABBMinMax(LocalVertex, Radius, &RRAMin, &RRAMax);
+		if( CollDetAABB_vs_AABB( &BoxSize, &RRAMin, &RRAMax))
+		{
+			if(flag)
+			{
+				printf("<INFO>: Change Narrow Collidion Detection ===============================================\n");
+				flag = false;
+			}
+			ret = CollDetRoundRectAngle_vs_OBB(rectangle_id, area_id);
+		}
+		else
+		{
+			flag = true;
+		}
 	}
 
 	return ret;
